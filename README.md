@@ -1,5 +1,7 @@
 # @tangleclaw/openclaw-google-oauth
 
+<img src="https://github.com/Jason-Vaughan/project-assets/raw/main/openclaw-google-oauth-no-mcp.png" align="right" width="160" alt="No MCP server required">
+
 **Google Workspace tools for [OpenClaw](https://openclaw.ai) — Gmail, Calendar, Drive, Docs, Sheets, Slides — via direct OAuth.** Your OAuth client talks straight to `googleapis.com`. **No MCP server to run.** No third-party gateway. No IMAP/App Password workaround. Install the plugin, complete the OAuth dance once, and 24 Google Workspace tools are callable from your OpenClaw agent.
 
 ## Looking for...
