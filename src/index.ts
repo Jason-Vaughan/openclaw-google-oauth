@@ -340,7 +340,7 @@ export default defineToolPlugin({
       name: "drive_files_list",
       label: "List Drive Files",
       description:
-        "READ / LIST Google Drive files. Call this — do not narrate — when the user asks to: see/list/show/find/browse/search files in Drive, what files are there, what docs/sheets/slides did I create, look for a file. Scoped to `drive.file` — only sees files this app created or was explicitly shared with (cannot see arbitrary user Drive). Drive query syntax: `mimeType='application/vnd.google-apps.spreadsheet'`, `name contains 'invoice'`, `'parent-folder-id' in parents`. Omit query for the 25 most recent.",
+        "READ / LIST Google Drive files and folders. Call this — do not narrate — when the user asks to: see/list/show/find/browse/search files in Drive, what files are there, what docs/sheets/slides did I create, what folders has the user shared with me, look for a file. Sees the authorized account's entire Drive: files the app created, files shared with the account, files in shared folders. To find a folder by name: `mimeType='application/vnd.google-apps.folder' and name='eBay_Photos'`. To find contents of a folder: `'<folder-id>' in parents`. Other query examples: `mimeType='application/vnd.google-apps.spreadsheet'`, `name contains 'invoice'`, `sharedWithMe = true`. Omit query for the 25 most recent.",
       parameters: Type.Object({
         query: Type.Optional(
           Type.String({

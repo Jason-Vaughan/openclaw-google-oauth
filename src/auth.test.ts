@@ -53,8 +53,11 @@ describe("SCOPES", () => {
     expect(SCOPES).not.toContain("https://www.googleapis.com/auth/gmail.readonly");
   });
 
-  it("uses drive.file (per-app) not full drive scope", () => {
-    expect(SCOPES).toContain("https://www.googleapis.com/auth/drive.file");
-    expect(SCOPES).not.toContain("https://www.googleapis.com/auth/drive");
+  it("requests full drive scope (so shared folders/files are visible)", () => {
+    expect(SCOPES).toContain("https://www.googleapis.com/auth/drive");
+    // drive.file is intentionally NOT requested — it only lets the app see
+    // files it created itself, not files merely shared with the account.
+    // That broke the "sharer controls access via Drive ACLs" mental model.
+    expect(SCOPES).not.toContain("https://www.googleapis.com/auth/drive.file");
   });
 });

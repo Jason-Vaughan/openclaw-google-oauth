@@ -13,7 +13,11 @@ export const SCOPES = [
   "https://www.googleapis.com/auth/gmail.modify",
   "https://www.googleapis.com/auth/gmail.send",
   "https://www.googleapis.com/auth/calendar.events",
-  "https://www.googleapis.com/auth/drive.file",
+  // Full Drive scope (not drive.file) so the agent can see folders + files
+  // shared with the authorized account, not only files it created itself.
+  // Per-file ACLs still apply: shared-as-reader is read-only,
+  // shared-as-writer is read+write, files the app owns are full access.
+  "https://www.googleapis.com/auth/drive",
   "https://www.googleapis.com/auth/documents",
   "https://www.googleapis.com/auth/spreadsheets",
   "https://www.googleapis.com/auth/presentations",
