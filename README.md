@@ -100,13 +100,13 @@ Tilde expansion (`~/`) is supported.
 https://www.googleapis.com/auth/gmail.modify
 https://www.googleapis.com/auth/gmail.send
 https://www.googleapis.com/auth/calendar.events
-https://www.googleapis.com/auth/drive.file
+https://www.googleapis.com/auth/drive
 https://www.googleapis.com/auth/documents
 https://www.googleapis.com/auth/spreadsheets
 https://www.googleapis.com/auth/presentations
 ```
 
-`drive.file` is the *minimal* Drive scope — the plugin only sees files it created or was explicitly given access to. If you need broader Drive access, fork and add the scope you want.
+**Full `drive` scope** is requested intentionally so the agent can see and act on folders/files shared *with* the authorized account, not just files it created itself. The natural permission model still applies: per-file Drive ACLs decide what the agent can actually do (shared-as-reader = read-only, shared-as-writer = read+write, files the agent owns = full control). If you want to restrict the plugin to only files it created, fork and swap `drive` for `drive.file` in `src/auth.ts`.
 
 ## Verify it works end-to-end
 

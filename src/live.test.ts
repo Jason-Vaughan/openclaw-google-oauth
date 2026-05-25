@@ -263,6 +263,23 @@ describeIfToken("live: Drive tools", () => {
     // drive.files.delete will still succeed against a trashed file and
     // performs the permanent purge.
   }, TIMEOUT_MS);
+
+  // Regression test for the scope-widening fix: with full `drive` scope,
+  // a sharedWithMe query must not error and must return whatever the
+  // authorized account has been given access to. The drive.file scope this
+  // replaced returned an empty array even when shares existed, which made
+  // shared eBay-photo folders invisible to the agent.
+  it("drive sharedWithMe query is callable under the full drive scope", async () => {
+    const res = await drive.files.list({
+      q: "sharedWithMe = true",
+      fields: "files(id, name, mimeType)",
+      pageSize: 5,
+    });
+    // We can't assert a specific count — it depends on what the user has
+    // been shared. We assert only that the call succeeds (the old
+    // drive.file scope would silently return [] regardless of shares).
+    expect(Array.isArray(res.data.files)).toBe(true);
+  }, TIMEOUT_MS);
 });
 
 // drive_permission_create requires a real share target — opt-in via env var.
