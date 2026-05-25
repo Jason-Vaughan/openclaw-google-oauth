@@ -1,0 +1,53 @@
+{
+  "id": "tangleclaw-google-oauth",
+  "name": "TangleClaw Google OAuth",
+  "description": "OpenClaw plugin for Google Workspace — Gmail (send/read/label), Calendar (events), Drive (list/share), Docs (create/read/append), Sheets (create/read/append), Slides (create/read) via direct OAuth. Your OAuth client talks straight to Google. No third-party gateway, no IMAP App Password.",
+  "version": "0.1.0",
+  "activation": {
+    "onStartup": true
+  },
+  "configSchema": {
+    "type": "object",
+    "required": [
+      "credentialsPath",
+      "tokenPath"
+    ],
+    "properties": {
+      "credentialsPath": {
+        "type": "string",
+        "default": "~/.openclaw/secrets/gmail-credentials.json",
+        "description": "Path to the OAuth client credentials JSON downloaded from Google Cloud Console (Desktop client)."
+      },
+      "tokenPath": {
+        "type": "string",
+        "default": "~/.openclaw/secrets/gmail-token.json",
+        "description": "Path where the refresh token will be written + read."
+      }
+    }
+  },
+  "contracts": {
+    "tools": [
+      "google_auth_start",
+      "google_auth_complete",
+      "gmail_messages_list",
+      "gmail_message_get",
+      "gmail_message_send",
+      "gmail_message_modify",
+      "calendar_events_list",
+      "calendar_event_create",
+      "calendar_event_get",
+      "drive_files_list",
+      "drive_file_get",
+      "drive_permission_create",
+      "docs_create",
+      "docs_get",
+      "docs_append_text",
+      "sheets_create",
+      "sheets_get",
+      "sheets_values_get",
+      "sheets_values_append",
+      "slides_create",
+      "slides_get"
+    ]
+  }
+}

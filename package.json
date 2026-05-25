@@ -1,0 +1,77 @@
+{
+  "name": "@tangleclaw/openclaw-google-oauth",
+  "version": "0.1.0",
+  "description": "OpenClaw plugin for Google Workspace — Gmail (send/read/label), Calendar (events), Drive (list/share), Docs (create/read/append), Sheets (create/read/append), Slides (create/read) via direct OAuth. Your OAuth client talks straight to Google. No third-party gateway, no IMAP App Password.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Jason Vaughan",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jason-Vaughan/openclaw-google-oauth.git"
+  },
+  "keywords": [
+    "openclaw",
+    "openclaw-plugin",
+    "clawhub",
+    "google",
+    "google-api",
+    "google-apis",
+    "google-workspace",
+    "google-cloud",
+    "workspace",
+    "gmail",
+    "gmail-api",
+    "email",
+    "send-email",
+    "inbox",
+    "calendar",
+    "google-calendar",
+    "events",
+    "drive",
+    "google-drive",
+    "docs",
+    "google-docs",
+    "documents",
+    "sheets",
+    "google-sheets",
+    "spreadsheets",
+    "slides",
+    "google-slides",
+    "presentations",
+    "oauth",
+    "oauth2",
+    "ai-agent",
+    "agent-tools",
+    "llm-tools",
+    "tangleclaw"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "plugin:build": "npm run build && openclaw plugins build --entry ./dist/index.js",
+    "plugin:validate": "npm run build && openclaw plugins validate --entry ./dist/index.js",
+    "test": "vitest run"
+  },
+  "files": [
+    "dist",
+    "openclaw.plugin.json",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "openclaw": ">=2026.5.17"
+  },
+  "dependencies": {
+    "googleapis": "^144.0.0",
+    "typebox": "^1.1.38"
+  },
+  "devDependencies": {
+    "openclaw": "latest",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0",
+    "@types/node": "^22.0.0"
+  },
+  "openclaw": {
+    "extensions": [
+      "./dist/index.js"
+    ]
+  }
+}
