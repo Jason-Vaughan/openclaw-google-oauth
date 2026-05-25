@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-05-25
+
 ### Changed
 
 - Read tool descriptions now explicitly push the agent to **re-call on follow-up questions** instead of reusing previous results. Failure mode this fixes: agent calls `drive_files_list` once, user adds a new folder, user asks "do you see it now?", agent narrates "Let me check..." but never re-calls the tool because it thinks it already has the data. Updated descriptions on `drive_files_list`, `gmail_messages_list`, `calendar_events_list`, `sheets_values_get`, and `docs_get` to lead with "ALWAYS call this tool — do not narrate, do not reuse previous results" and to enumerate the "is it there now / did something arrive / what changed" follow-up phrasings. `drive_files_list` additionally emphasizes the `'<folder-id>' in parents` query as the primary syntax for "what's inside this folder" requests (the agent was failing to construct that on its own).
