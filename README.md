@@ -106,7 +106,57 @@ To use a different path, set `credentialsPath` in the plugin config.
 
 ### 3. Run the OAuth dance from the agent
 
-Have your agent call `google_auth_start`. It returns a URL. Open it, sign in, grant access, copy the `code=` query parameter from the redirected URL, then call `google_auth_complete` with that code. A `gmail-token.json` file is written to `~/.openclaw/secrets/` (or `tokenPath` if overridden).
+This is a 6-step interactive flow that happens once (or whenever you re-scope / re-publish). It involves opening a browser, signing in to Google, copying a value out of the URL bar, and pasting it back. Step by step:
+
+**Step 1.** Have your agent call `google_auth_start` (no parameters). The tool returns:
+
+```json
+{
+  "authUrl": "https://accounts.google.com/o/oauth2/v2/auth?...",
+  "instructions": "Open authUrl in a browser..."
+}
+```
+
+Copy the `authUrl` value.
+
+**Step 2.** Open that URL in any browser. (Can be on a different machine — phone, laptop, etc.)
+
+**Step 3.** Sign in with the dedicated Google account you set up for this plugin (NOT your personal email — see the ⚠️ warning above).
+
+**Step 4.** Google shows the consent screen with a list of permissions ("See, edit, create, and delete all your Google Drive files", "Send email on your behalf", "View and edit events on all your calendars", etc.). On a Testing-status app you may also see a "Google hasn't verified this app" warning — click **Advanced** → **Go to `<your app name>` (unsafe)** to proceed. Then on the consent screen:
+
+  1. Click **"Select all"** at the top of the permission checklist.
+  2. Click the blue **"Continue"** button at the bottom.
+
+**Step 5.** The browser will then try to load `http://localhost/?code=...` (or `http://localhost:4001/...` depending on your OAuth client's configured redirect URI). The page will fail to load with **"This site can't be reached"** or **"ERR_CONNECTION_REFUSED"** — **this is expected and correct.** There is no server running on localhost; we only need the URL bar.
+
+  Look at the URL in your browser's address bar. It'll look like:
+
+  ```
+  http://localhost/?iss=https://accounts.google.com&code=4/0AeoWuM-xxxxxxxxxxxxxxxxxxxxxxxxxxxx&scope=https://www.googleapis.com/auth/...
+  ```
+
+  The piece you need is the `code=` value — everything between `code=` and the next `&`. Copy just that string (a long string starting with `4/0`).
+
+**Step 6.** Call `google_auth_complete` with `code: "<the value you copied>"`. The tool writes a refresh-token-bearing token file to `~/.openclaw/secrets/gmail-token.json` (or wherever you set `tokenPath`) and returns:
+
+```json
+{
+  "ok": true,
+  "tokenPath": "/home/.../.openclaw/secrets/gmail-token.json",
+  "scopes": ["https://www.googleapis.com/auth/gmail.modify", ...]
+}
+```
+
+That's it — the token is in place and every other tool in this plugin (`gmail_messages_list`, `calendar_event_create`, etc.) will use it automatically.
+
+**If you don't have agent access yet (first-time install):** use the standalone setup script instead: `node scripts/oauth-setup.mjs` in the plugin directory. It does the same 6 steps interactively in a terminal.
+
+**When to re-run this dance:**
+- After installing the plugin for the first time.
+- After widening or narrowing the requested OAuth scopes (changing `SCOPES` in `src/auth.ts`).
+- After Publishing the OAuth app (the Testing-status token has a 7-day clock; the Production-status token issued from a re-auth lives indefinitely — see "The 7-day refresh-token expiry trap" below).
+- If you ever see `invalid_grant` errors from any tool — usually means the token expired (Testing) or was revoked.
 
 That's it. All other tools work from there.
 
