@@ -9,7 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Rewrote every tool description (and the plugin description) to use natural-language verbs like "check", "read", "send", "schedule", "share" so smaller agent models can match user intent to tool. Previous descriptions like "List messages matching a Gmail search query" were too terse — models would narrate "I'll check the inbox" without actually selecting `gmail_messages_list`. New descriptions explicitly map common user phrasings ("check email", "read message", "find files") to the right tool, document the tool→tool flow (e.g. `gmail_messages_list` → `gmail_message_get`), and include practical examples of query/parameter syntax inline. Verified by re-running the unit + live test suites; no behavior or schema changes — only descriptions.
+- Rewrote every tool description (and the plugin description) for agent discoverability. Read tools now lead with `READ` + explicit verb lists (read/list/check/view/show/fetch/see/find/look/browse) so smaller agent models like Qwen 2.5 14B reliably select them instead of narrating "I'll check the inbox" without acting. Write tools document the user-facing intent (edit/send/schedule/share). `docs_append_text` is explicitly labeled as THE edit tool for Google Docs (to prevent collision with OpenClaw's built-in workspace `edit` tool, which is for local files only). Tool→tool flows (e.g. `gmail_messages_list` → `gmail_message_get`) and parameter examples are inlined. No schema or behavior changes — descriptions only.
+
+### Added
+
+- `src/descriptions.test.ts` — 23 unit tests that enforce description quality: read tools must include ≥2 read-intent verbs, write tools must include ≥1 write-intent verb, every tool must name a Google product or OAuth, and `docs_append_text` must claim the "edit" verb. Prevents description regressions.
+- Expanded `src/live.test.ts` to cover **all** 21 tools with real round-trips (when `RUN_LIVE_TESTS=1`): Gmail send→list→get→modify, Calendar create→list→get, Drive list/get, Docs create→get→append→verify, Sheets create→get→append→read, Slides create→get. All fixtures are auto-cleaned up via `afterAll` (messages trashed, events/files deleted). `drive_permission_create` test is additionally gated behind `LIVE_SHARE_TEST_EMAIL` so it doesn't share real files with arbitrary addresses.
+- `vitest.config.ts` — restricts test discovery to `src/**/*.test.ts` so stale compiled tests in `dist/` don't run.
 
 ## [0.1.0] — 2026-05-24
 

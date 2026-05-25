@@ -36,7 +36,8 @@ describe("tangleclaw-google-oauth plugin metadata", () => {
   it("declares the expected id, name, and description", () => {
     expect(metadata!.id).toBe("tangleclaw-google-oauth");
     expect(metadata!.name).toBe("TangleClaw Google OAuth");
-    expect(metadata!.description).toMatch(/Direct-OAuth/);
+    expect(metadata!.description).toMatch(/Google Workspace/);
+    expect(metadata!.description).toMatch(/direct OAuth/i);
   });
 
   it("exposes every expected tool exactly once", () => {

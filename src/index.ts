@@ -77,7 +77,7 @@ export default defineToolPlugin({
       name: "gmail_messages_list",
       label: "List Gmail Messages",
       description:
-        "Check the Gmail inbox / search for emails / find messages / look at recent mail. Returns a list of message ids and snippets — call gmail_message_get with one of those ids to read the full body. Default returns the 10 most recent messages. Filter with Gmail search syntax: `is:unread`, `newer_than:1d`, `from:alice@example.com`, `subject:invoice`, `has:attachment`, `in:inbox`.",
+        "READ the Gmail inbox. Call this tool — do not describe what you would do — whenever the user asks to: check email, read inbox, see messages, look at recent mail, search emails, find a message, what mail did I get, any new email, what's in my inbox. Returns a list of message ids and snippets — call gmail_message_get with one of those ids to read the full body. Default returns the 10 most recent messages. Filter with Gmail search syntax: `is:unread`, `newer_than:1d`, `from:alice@example.com`, `subject:invoice`, `has:attachment`, `in:inbox`.",
       parameters: Type.Object({
         query: Type.Optional(
           Type.String({
@@ -111,7 +111,7 @@ export default defineToolPlugin({
       name: "gmail_message_get",
       label: "Get Gmail Message",
       description:
-        "Read a Gmail message — fetch the full contents (from, subject, body, headers, attachments metadata) of one message by its id. Get the id from gmail_messages_list first. Use this to actually read what an email says after finding it.",
+        "READ a Gmail message — fetch the full contents (from, subject, body, headers, attachments metadata) of one message by its id. Call this — do not narrate — when the user asks to read/show/view/open/see the contents of a specific email. Get the id from gmail_messages_list first.",
       parameters: Type.Object({
         id: Type.String({ description: "Gmail message id." }),
         format: Type.Optional(
@@ -200,7 +200,7 @@ export default defineToolPlugin({
       name: "calendar_events_list",
       label: "List Calendar Events",
       description:
-        "Check the Google Calendar / list upcoming events / see what's on the schedule / find calendar appointments. Returns events in time order. Defaults to the primary calendar and the next 25 events. Filter to a window with timeMin/timeMax (RFC3339, e.g. 2026-06-01T00:00:00Z).",
+        "READ events from the Google Calendar. Call this tool — do not describe what you would do — whenever the user asks to: see, view, read, show, list, check, fetch, find, look up, look at, browse, what's on the calendar, what events I have, what's scheduled, what appointments / meetings / events are coming up, what events were added, what's on the schedule today/tomorrow/this week. Returns events in time order from the primary calendar (default), next 25 (default). To include past events, pass `timeMin` like `2020-01-01T00:00:00Z`. To filter a specific day or range, pass `timeMin` and `timeMax` (RFC3339).",
       parameters: Type.Object({
         calendarId: Type.Optional(Type.String({ default: "primary" })),
         timeMin: Type.Optional(
@@ -276,7 +276,7 @@ export default defineToolPlugin({
       name: "calendar_event_get",
       label: "Get Calendar Event",
       description:
-        "Read the full details of one Google Calendar event by id (summary, description, time, attendees, location). Get the id from calendar_events_list first.",
+        "READ the full details of one Google Calendar event by id (summary, description, time, attendees, location). Call this — do not narrate — when the user asks to see/view/read/show/look at a specific calendar event. Get the id from calendar_events_list first.",
       parameters: Type.Object({
         calendarId: Type.Optional(Type.String({ default: "primary" })),
         eventId: Type.String(),
@@ -300,7 +300,7 @@ export default defineToolPlugin({
       name: "drive_files_list",
       label: "List Drive Files",
       description:
-        "List or search Google Drive files / find a file / browse Drive. Scoped to drive.file — only sees files this app created or was explicitly shared with (cannot see arbitrary user Drive). Drive query syntax: `mimeType='application/vnd.google-apps.spreadsheet'`, `name contains 'invoice'`, `'parent-folder-id' in parents`. Omit query for the 25 most recent.",
+        "READ / LIST Google Drive files. Call this — do not narrate — when the user asks to: see/list/show/find/browse/search files in Drive, what files are there, what docs/sheets/slides did I create, look for a file. Scoped to `drive.file` — only sees files this app created or was explicitly shared with (cannot see arbitrary user Drive). Drive query syntax: `mimeType='application/vnd.google-apps.spreadsheet'`, `name contains 'invoice'`, `'parent-folder-id' in parents`. Omit query for the 25 most recent.",
       parameters: Type.Object({
         query: Type.Optional(
           Type.String({
@@ -334,7 +334,7 @@ export default defineToolPlugin({
       name: "drive_file_get",
       label: "Get Drive File Metadata",
       description:
-        "Get metadata (name, mimeType, parents folder, owners, size, sharing link, modifiedTime) for one Google Drive file by id. Does not return file contents — use the per-type tools (docs_get, sheets_values_get, etc.) to read contents.",
+        "READ / VIEW / fetch metadata (name, mimeType, parents folder, owners, size, sharing link, modifiedTime) for one Google Drive file by id. Does not return file contents — use the per-type tools (docs_get, sheets_values_get, slides_get) to read actual contents.",
       parameters: Type.Object({
         fileId: Type.String(),
       }),
@@ -399,7 +399,7 @@ export default defineToolPlugin({
       name: "docs_create",
       label: "Create Google Doc",
       description:
-        "Create a new empty Google Doc (Google Docs document) with the given title. Returns the documentId and a docs.google.com URL. Follow up with docs_append_text to add content.",
+        "Create a new empty Google Doc (Google Docs document) with the given title. Returns the documentId and a docs.google.com URL. To add content, call docs_append_text with that documentId — never use the workspace `edit` tool on a Google Doc (it's for local files only).",
       parameters: Type.Object({
         title: Type.String(),
       }),
@@ -421,7 +421,7 @@ export default defineToolPlugin({
       name: "docs_get",
       label: "Get Google Doc",
       description:
-        "Read the full structured contents of a Google Doc by documentId — paragraphs, headings, tables, formatting. Use this to fetch / view / read what a Google Doc says.",
+        "READ the full structured contents of a Google Doc by documentId — paragraphs, headings, tables, formatting. Call this — do not narrate — when the user asks to read/view/fetch/show/open/see what a Google Doc says.",
       parameters: Type.Object({
         documentId: Type.String(),
       }),
@@ -437,9 +437,9 @@ export default defineToolPlugin({
     }),
     tool({
       name: "docs_append_text",
-      label: "Append Text to Google Doc",
+      label: "Edit Google Doc (Append Text)",
       description:
-        "Add / write / append plain text to the end of an existing Google Doc. Use after docs_create to populate a new doc, or to add to an existing doc.",
+        "Edit / write to / add content to / modify / update an existing Google Doc by appending plain text to the end. THIS is the tool for any change to a Google Doc — do NOT use the workspace `edit` tool (that's for local files only, it cannot edit Google Docs). Pass the documentId (from docs_create or drive_files_list), not a file path. Use after docs_create to populate a new Google Doc.",
       parameters: Type.Object({
         documentId: Type.String(),
         text: Type.String(),
@@ -502,7 +502,7 @@ export default defineToolPlugin({
       name: "sheets_get",
       label: "Get Spreadsheet Metadata",
       description:
-        "Get metadata for a Google Sheet (list of sheet/tab names, properties, title) — does NOT return cell values. For values, use sheets_values_get.",
+        "READ metadata for a Google Sheet (list of sheet/tab names, properties, title) — does NOT return cell values. For actual cell values, use sheets_values_get.",
       parameters: Type.Object({
         spreadsheetId: Type.String(),
       }),
@@ -520,7 +520,7 @@ export default defineToolPlugin({
       name: "sheets_values_get",
       label: "Read Sheet Values",
       description:
-        "Read cell values from a Google Sheet. Range is A1 notation: `Sheet1!A1:C10` (a rectangle), `Sheet1!A:A` (whole column A), `Sheet1` (all data). Returns a 2D array of cell values.",
+        "READ cell values from a Google Sheet. Call this — do not narrate — when the user asks to see/read/fetch/show/look at/view data in a spreadsheet or the contents of a sheet. Range is A1 notation: `Sheet1!A1:C10` (a rectangle), `Sheet1!A:A` (whole column A), `Sheet1` (all data on a tab). Returns a 2D array of cell values.",
       parameters: Type.Object({
         spreadsheetId: Type.String(),
         range: Type.String(),
@@ -593,7 +593,7 @@ export default defineToolPlugin({
       name: "slides_get",
       label: "Get Slides Presentation",
       description:
-        "Read the structure of a Google Slides presentation by presentationId — slides, layouts, text content. Use this to see what's in a presentation.",
+        "READ the structure of a Google Slides presentation by presentationId — slides, layouts, text content. Call this — do not narrate — when the user asks to see/view/read/show/look at the contents of a presentation.",
       parameters: Type.Object({
         presentationId: Type.String(),
       }),
