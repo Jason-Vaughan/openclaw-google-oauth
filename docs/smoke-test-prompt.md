@@ -52,6 +52,10 @@ DRIVE
 17. List Google Drive files matching the query: name contains 'Workspace smoke test'. Report the names and ids that came back.
 18. Get metadata for the Google Doc you created in step 8. Report its mimeType and modifiedTime.
 
+SHARED ITEMS (regression check for v0.2+ scope widening)
+19. Call drive_files_list with query: sharedWithMe = true. Report the count and the first 5 names. This step is a regression check — under earlier versions (drive.file scope) it would silently return 0 results even if the user had shared folders with the agent. Under v0.2+ (full drive scope) this returns the actual list of shared items.
+20. (Optional, if the operator has shared a known folder with the agent) Call drive_files_list with query: mimeType='application/vnd.google-apps.folder' and name='<known-shared-folder-name>'. Confirm the agent can see it. If the agent cannot, the operator did not actually share with this agent's authorized email — verify the share recipient.
+
 When done, summarize: did EVERY step actually call its tool and return real data? List any step where you narrated instead of executing — those are bugs to report.
 ```
 
@@ -63,6 +67,7 @@ When done, summarize: did EVERY step actually call its tool and return real data
 | Some "read" steps narrate ("I'll check that now") without calling a tool | The agent's model isn't matching the user verb to the tool description. Try a fresh chat. If it persists across fresh chats, the model is too weak for reliable tool selection (Qwen 14B is around the borderline) — bump to a stronger model. |
 | Tools all executed but the agent only summarizes one step | Tool execution is fine; the model is bad at summarizing long multi-step runs. The artifacts are still created — verify in Google Drive. Bigger models (32B+, frontier models) summarize cleanly. |
 | Specific API errors (`invalid_grant`, `Insufficient Permission`, `accessNotConfigured`) | OAuth token expired (re-run setup), scope wasn't granted (re-auth), or that specific Google API isn't enabled in your GCP project (enable it). |
+| Step 19 returns 0 results even when you know you've shared things with the agent | You're on a pre-v0.2 install using the old `drive.file` scope. Upgrade to v0.2+ and re-run the OAuth dance to pick up the widened `drive` scope. |
 
 ## Cleanup prompt
 

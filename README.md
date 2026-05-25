@@ -17,6 +17,33 @@
 
 One install, one OAuth consent, six Google APIs callable as agent tools.
 
+## ⚠️ Use a dedicated Google account — do NOT use your personal email
+
+This plugin requests **full `drive` scope**, which means anything in the authorized account's Google Drive is readable (and, for files the agent owns or was shared as writer, writable) by the agent. Do **not** point this at your personal Gmail / Drive. Create a dedicated Google account for the agent (e.g. `myproject-agent@gmail.com`) and authorize *that* account. Then:
+
+- Share specific folders / files from your personal account to the agent account with the permission you want (reader / commenter / writer). The agent will see exactly what you shared, with the permission you granted — nothing more.
+- The agent's own Drive starts empty. Anything it creates (Docs, Sheets, Slides) is owned by the agent account.
+- If you ever want to revoke access entirely, revoke the OAuth grant at <https://myaccount.google.com/permissions> and / or unshare the folders.
+
+This pattern keeps the blast radius small: the agent can read what you share with it, write what it created itself, and nothing else. Pointing it at a personal account would give the agent (and anything controlling the plugin) the keys to your entire mail history, calendar, Drive, etc.
+
+### If you really can't use a dedicated account: narrow the scopes
+
+If you must point this at an existing personal-ish account, fork the plugin and edit the `SCOPES` array in [`src/auth.ts`](src/auth.ts). Drop scopes you don't need, or swap broad ones for narrower variants. Some safer swaps:
+
+| Default scope | Narrower option | Trade-off |
+|---|---|---|
+| `auth/drive` | `auth/drive.readonly` | Agent can READ everything in Drive (including shared folders) but cannot edit, move, delete, or upload. Drive write-back tools will fail. |
+| `auth/drive` | `auth/drive.file` | Agent only sees files it created itself + files picked via Google Picker. Cannot see arbitrary shared folders (the original problem we widened scope to fix — only use if you don't need shared-folder access). |
+| `auth/gmail.modify` | `auth/gmail.readonly` | Agent can read inbox but cannot star, label, archive, or trash. Send is unaffected (uses `gmail.send`). |
+| `auth/gmail.send` | _(remove)_ | Agent cannot send mail at all. |
+| `auth/calendar.events` | _(remove)_ | Agent cannot read or write calendar. |
+| _(all docs/sheets/slides scopes)_ | _(remove individually)_ | Agent cannot create/read/edit that file type. The corresponding tools will fail with `insufficient permission`. |
+
+After editing `SCOPES`, rebuild (`npm run build`), re-deploy to your OpenClaw install, and **re-run the OAuth dance** to pick up the new scope set. Re-auth is mandatory after any scope change — the existing token bakes in the old scope list and Google will refuse new requests against scopes you've now removed.
+
+> Reminder: the dedicated-account approach is still strongly preferred. Narrowing scopes reduces what's exposed *if* the agent or token leaks, but it doesn't change the underlying principle that the agent has direct access to a real Google account.
+
 ## What you get
 
 A single OpenClaw plugin that exposes 24 agent-callable tools spanning six Google APIs from one OAuth client:
