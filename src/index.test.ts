@@ -9,12 +9,15 @@ const expectedTools = [
   "gmail_message_get",
   "gmail_message_send",
   "gmail_message_modify",
+  "gmail_message_trash",
   "calendar_events_list",
   "calendar_event_create",
   "calendar_event_get",
+  "calendar_event_delete",
   "drive_files_list",
   "drive_file_get",
   "drive_permission_create",
+  "drive_file_trash",
   "docs_create",
   "docs_get",
   "docs_append_text",
@@ -36,7 +39,8 @@ describe("tangleclaw-google-oauth plugin metadata", () => {
   it("declares the expected id, name, and description", () => {
     expect(metadata!.id).toBe("tangleclaw-google-oauth");
     expect(metadata!.name).toBe("TangleClaw Google OAuth");
-    expect(metadata!.description).toMatch(/Direct-OAuth/);
+    expect(metadata!.description).toMatch(/Google Workspace/);
+    expect(metadata!.description).toMatch(/direct OAuth/i);
   });
 
   it("exposes every expected tool exactly once", () => {

@@ -33,7 +33,7 @@ export default defineToolPlugin({
   id: "tangleclaw-google-oauth",
   name: "TangleClaw Google OAuth",
   description:
-    "Direct-OAuth Google Workspace tools for OpenClaw — Gmail, Calendar, Drive, Docs, Sheets, Slides. No third-party gateway.",
+    "OpenClaw plugin for Google Workspace — Gmail (send/read/label), Calendar (events), Drive (list/share), Docs (create/read/append), Sheets (create/read/append), Slides (create/read) via direct OAuth. Your OAuth client talks straight to Google. No third-party gateway, no IMAP App Password.",
   configSchema,
   tools: (tool) => [
     // ── OAuth setup ───────────────────────────────────────────────────────
@@ -41,7 +41,7 @@ export default defineToolPlugin({
       name: "google_auth_start",
       label: "Start Google OAuth",
       description:
-        "Returns the URL the user opens in a browser to authorize this app. Reads the client credentials from configured credentialsPath.",
+        "Start a fresh Google OAuth authorization flow. Returns a URL the human must open in a browser to grant access. Only call this if the existing token has expired (invalid_grant errors) or if scopes need to be widened. Reads OAuth client credentials from configured credentialsPath.",
       parameters: Type.Object({}),
       async execute(_params, config) {
         const url = await buildAuthUrl(authConfig(config));
@@ -56,7 +56,7 @@ export default defineToolPlugin({
       name: "google_auth_complete",
       label: "Complete Google OAuth",
       description:
-        "Exchange the authorization code (from google_auth_start) for tokens. Writes a refresh-token-bearing token file to configured tokenPath.",
+        "Finish Google OAuth authorization by exchanging the authorization code (the `code=` value from the redirect after google_auth_start) for an access + refresh token. Writes the token file so other Google tools can use it.",
       parameters: Type.Object({
         code: Type.String({
           description: "The `code` query parameter returned by Google after consent.",
@@ -76,12 +76,13 @@ export default defineToolPlugin({
     tool({
       name: "gmail_messages_list",
       label: "List Gmail Messages",
-      description: "List messages matching a Gmail search query.",
+      description:
+        "READ the Gmail inbox. Call this tool — do not describe what you would do — whenever the user asks to: check email, read inbox, see messages, look at recent mail, search emails, find a message, what mail did I get, any new email, what's in my inbox. Returns a list of message ids and snippets — call gmail_message_get with one of those ids to read the full body. Default returns the 10 most recent messages. Filter with Gmail search syntax: `is:unread`, `newer_than:1d`, `from:alice@example.com`, `subject:invoice`, `has:attachment`, `in:inbox`.",
       parameters: Type.Object({
         query: Type.Optional(
           Type.String({
             description:
-              "Gmail search query (same syntax as the Gmail search bar). Example: 'is:unread newer_than:7d'",
+              "Gmail search query (same syntax as the Gmail search bar). Examples: `is:unread`, `newer_than:7d`, `from:alice@example.com`, `subject:invoice`. Omit to get the most recent messages.",
           })
         ),
         maxResults: Type.Optional(
@@ -109,7 +110,8 @@ export default defineToolPlugin({
     tool({
       name: "gmail_message_get",
       label: "Get Gmail Message",
-      description: "Fetch a single Gmail message by id (full payload).",
+      description:
+        "READ a Gmail message — fetch the full contents (from, subject, body, headers, attachments metadata) of one message by its id. Call this — do not narrate — when the user asks to read/show/view/open/see the contents of a specific email. Get the id from gmail_messages_list first.",
       parameters: Type.Object({
         id: Type.String({ description: "Gmail message id." }),
         format: Type.Optional(
@@ -142,7 +144,7 @@ export default defineToolPlugin({
       name: "gmail_message_send",
       label: "Send Gmail Message",
       description:
-        "Send an email from the authorized Gmail account (plain text body).",
+        "Send an email through Gmail from the authorized account. Body is plain text. Use this to reply to people, send notifications, or share information by email.",
       parameters: Type.Object({
         to: Type.String({ description: "Recipient address (or comma-separated list)." }),
         subject: Type.String(),
@@ -168,7 +170,8 @@ export default defineToolPlugin({
     tool({
       name: "gmail_message_modify",
       label: "Modify Gmail Labels",
-      description: "Add and/or remove labels on a Gmail message.",
+      description:
+        "Label, archive, mark-as-read, star, or trash a Gmail message. Common uses: mark read = removeLabelIds:[\"UNREAD\"]; archive = removeLabelIds:[\"INBOX\"]; star = addLabelIds:[\"STARRED\"]; trash = addLabelIds:[\"TRASH\"]; restore to inbox = addLabelIds:[\"INBOX\"].",
       parameters: Type.Object({
         id: Type.String(),
         addLabelIds: Type.Optional(Type.Array(Type.String())),
@@ -191,12 +194,31 @@ export default defineToolPlugin({
         return { id: res.data.id, labelIds: res.data.labelIds ?? [] };
       },
     }),
+    tool({
+      name: "gmail_message_trash",
+      label: "Trash Gmail Message",
+      description:
+        "DELETE / TRASH / REMOVE a Gmail message by id. Moves the message to Gmail's Trash folder — recoverable for 30 days, then auto-purged by Google. Use this to clean up messages. (For a permanent immediate delete, manage from the Gmail UI.)",
+      parameters: Type.Object({
+        id: Type.String({ description: "Gmail message id (from gmail_messages_list)." }),
+      }),
+      async execute({ id }, config) {
+        const auth = await createOAuthClient(authConfig(config));
+        const gmail = google.gmail({ version: "v1", auth });
+        const res = await withTimeout(
+          gmail.users.messages.trash({ userId: "me", id }),
+          "gmail.messages.trash"
+        );
+        return { id: res.data.id, labelIds: res.data.labelIds ?? [] };
+      },
+    }),
 
     // ── Calendar ──────────────────────────────────────────────────────────
     tool({
       name: "calendar_events_list",
       label: "List Calendar Events",
-      description: "List events from a calendar.",
+      description:
+        "READ events from the Google Calendar. Call this tool — do not describe what you would do — whenever the user asks to: see, view, read, show, list, check, fetch, find, look up, look at, browse, what's on the calendar, what events I have, what's scheduled, what appointments / meetings / events are coming up, what events were added, what's on the schedule today/tomorrow/this week. Returns events in time order from the primary calendar (default), next 25 (default). To include past events, pass `timeMin` like `2020-01-01T00:00:00Z`. To filter a specific day or range, pass `timeMin` and `timeMax` (RFC3339).",
       parameters: Type.Object({
         calendarId: Type.Optional(Type.String({ default: "primary" })),
         timeMin: Type.Optional(
@@ -231,7 +253,8 @@ export default defineToolPlugin({
     tool({
       name: "calendar_event_create",
       label: "Create Calendar Event",
-      description: "Create a new calendar event.",
+      description:
+        "Schedule a new event on the Google Calendar / add an event / book time / set up a meeting / make a reminder. Times are RFC3339 (e.g. 2026-06-01T14:00:00-07:00). Defaults to the primary calendar. Pass attendees as a list of email addresses.",
       parameters: Type.Object({
         calendarId: Type.Optional(Type.String({ default: "primary" })),
         summary: Type.String(),
@@ -270,7 +293,8 @@ export default defineToolPlugin({
     tool({
       name: "calendar_event_get",
       label: "Get Calendar Event",
-      description: "Fetch a single calendar event by id.",
+      description:
+        "READ the full details of one Google Calendar event by id (summary, description, time, attendees, location). Call this — do not narrate — when the user asks to see/view/read/show/look at a specific calendar event. Get the id from calendar_events_list first.",
       parameters: Type.Object({
         calendarId: Type.Optional(Type.String({ default: "primary" })),
         eventId: Type.String(),
@@ -288,12 +312,35 @@ export default defineToolPlugin({
         return res.data;
       },
     }),
+    tool({
+      name: "calendar_event_delete",
+      label: "Delete Calendar Event",
+      description:
+        "DELETE / REMOVE / CANCEL a Google Calendar event by id. Recoverable from Google Calendar's Trash for ~30 days. Get the event id from calendar_events_list first. Defaults to the primary calendar.",
+      parameters: Type.Object({
+        calendarId: Type.Optional(Type.String({ default: "primary" })),
+        eventId: Type.String({ description: "Event id (from calendar_events_list)." }),
+      }),
+      async execute({ calendarId, eventId }, config) {
+        const auth = await createOAuthClient(authConfig(config));
+        const calendar = google.calendar({ version: "v3", auth });
+        await withTimeout(
+          calendar.events.delete({
+            calendarId: calendarId ?? "primary",
+            eventId,
+          }),
+          "calendar.events.delete"
+        );
+        return { ok: true, deletedEventId: eventId };
+      },
+    }),
 
     // ── Drive ─────────────────────────────────────────────────────────────
     tool({
       name: "drive_files_list",
       label: "List Drive Files",
-      description: "List Drive files matching a query (drive.file scope — only sees files this app created or was given access to).",
+      description:
+        "READ / LIST Google Drive files. Call this — do not narrate — when the user asks to: see/list/show/find/browse/search files in Drive, what files are there, what docs/sheets/slides did I create, look for a file. Scoped to `drive.file` — only sees files this app created or was explicitly shared with (cannot see arbitrary user Drive). Drive query syntax: `mimeType='application/vnd.google-apps.spreadsheet'`, `name contains 'invoice'`, `'parent-folder-id' in parents`. Omit query for the 25 most recent.",
       parameters: Type.Object({
         query: Type.Optional(
           Type.String({
@@ -326,7 +373,8 @@ export default defineToolPlugin({
     tool({
       name: "drive_file_get",
       label: "Get Drive File Metadata",
-      description: "Get metadata for a single Drive file by id.",
+      description:
+        "READ / VIEW / fetch metadata (name, mimeType, parents folder, owners, size, sharing link, modifiedTime) for one Google Drive file by id. Does not return file contents — use the per-type tools (docs_get, sheets_values_get, slides_get) to read actual contents.",
       parameters: Type.Object({
         fileId: Type.String(),
       }),
@@ -346,7 +394,8 @@ export default defineToolPlugin({
     tool({
       name: "drive_permission_create",
       label: "Share Drive File",
-      description: "Share a Drive file or folder with another user/group.",
+      description:
+        "Share a Google Drive file, folder, Doc, Sheet, or Slides presentation with another person by email address. Role: `reader` (view only), `commenter` (view + comment), or `writer` (full edit).",
       parameters: Type.Object({
         fileId: Type.String(),
         emailAddress: Type.String(),
@@ -384,12 +433,35 @@ export default defineToolPlugin({
         return res.data;
       },
     }),
+    tool({
+      name: "drive_file_trash",
+      label: "Trash Drive File",
+      description:
+        "DELETE / TRASH / REMOVE a Google Drive file, folder, Doc, Sheet, or Slides presentation by id. Moves the file to Drive's Trash — recoverable for 30 days, then auto-purged by Google. Use this to clean up files this app created. (For an immediate permanent delete, manage from Drive UI or call this and empty the trash there.)",
+      parameters: Type.Object({
+        fileId: Type.String({ description: "Drive file id (from drive_files_list or the corresponding create tool's response)." }),
+      }),
+      async execute({ fileId }, config) {
+        const auth = await createOAuthClient(authConfig(config));
+        const drive = google.drive({ version: "v3", auth });
+        const res = await withTimeout(
+          drive.files.update({
+            fileId,
+            requestBody: { trashed: true },
+            fields: "id, trashed",
+          }),
+          "drive.files.update(trashed=true)"
+        );
+        return { ok: true, trashedFileId: res.data.id };
+      },
+    }),
 
     // ── Docs ──────────────────────────────────────────────────────────────
     tool({
       name: "docs_create",
       label: "Create Google Doc",
-      description: "Create a new empty Google Doc with the given title.",
+      description:
+        "Create a new empty Google Doc (Google Docs document) with the given title. Returns the documentId and a docs.google.com URL. To add content, call docs_append_text with that documentId — never use the workspace `edit` tool on a Google Doc (it's for local files only).",
       parameters: Type.Object({
         title: Type.String(),
       }),
@@ -410,7 +482,8 @@ export default defineToolPlugin({
     tool({
       name: "docs_get",
       label: "Get Google Doc",
-      description: "Fetch the full structured contents of a Google Doc.",
+      description:
+        "READ the full structured contents of a Google Doc by documentId — paragraphs, headings, tables, formatting. Call this — do not narrate — when the user asks to read/view/fetch/show/open/see what a Google Doc says.",
       parameters: Type.Object({
         documentId: Type.String(),
       }),
@@ -426,8 +499,9 @@ export default defineToolPlugin({
     }),
     tool({
       name: "docs_append_text",
-      label: "Append Text to Google Doc",
-      description: "Append plain text to the end of a Google Doc.",
+      label: "Edit Google Doc (Append Text)",
+      description:
+        "Edit / write to / add content to / modify / update an existing Google Doc by appending plain text to the end. THIS is the tool for any change to a Google Doc — do NOT use the workspace `edit` tool (that's for local files only, it cannot edit Google Docs). Pass the documentId (from docs_create or drive_files_list), not a file path. Use after docs_create to populate a new Google Doc.",
       parameters: Type.Object({
         documentId: Type.String(),
         text: Type.String(),
@@ -466,7 +540,8 @@ export default defineToolPlugin({
     tool({
       name: "sheets_create",
       label: "Create Google Sheet",
-      description: "Create a new empty Google Spreadsheet with the given title.",
+      description:
+        "Create a new empty Google Sheet (Google Sheets spreadsheet) with the given title. Returns the spreadsheetId and a docs.google.com URL. Follow up with sheets_values_append to add rows.",
       parameters: Type.Object({
         title: Type.String(),
       }),
@@ -488,7 +563,8 @@ export default defineToolPlugin({
     tool({
       name: "sheets_get",
       label: "Get Spreadsheet Metadata",
-      description: "Get spreadsheet metadata (sheets list, title, etc.) without values.",
+      description:
+        "READ metadata for a Google Sheet (list of sheet/tab names, properties, title) — does NOT return cell values. For actual cell values, use sheets_values_get.",
       parameters: Type.Object({
         spreadsheetId: Type.String(),
       }),
@@ -505,7 +581,8 @@ export default defineToolPlugin({
     tool({
       name: "sheets_values_get",
       label: "Read Sheet Values",
-      description: "Read values from a sheet range (A1 notation, e.g. 'Sheet1!A1:C10').",
+      description:
+        "READ cell values from a Google Sheet. Call this — do not narrate — when the user asks to see/read/fetch/show/look at/view data in a spreadsheet or the contents of a sheet. Range is A1 notation: `Sheet1!A1:C10` (a rectangle), `Sheet1!A:A` (whole column A), `Sheet1` (all data on a tab). Returns a 2D array of cell values.",
       parameters: Type.Object({
         spreadsheetId: Type.String(),
         range: Type.String(),
@@ -523,7 +600,8 @@ export default defineToolPlugin({
     tool({
       name: "sheets_values_append",
       label: "Append Sheet Values",
-      description: "Append rows to a sheet range. values is a 2D array (rows of cells).",
+      description:
+        "Append / add rows of data to a Google Sheet. `values` is a 2D array — each inner array is one row of cells. Use after sheets_create to populate a new spreadsheet, or to log new rows into an existing sheet.",
       parameters: Type.Object({
         spreadsheetId: Type.String(),
         range: Type.String({ description: "A1 notation (e.g. 'Sheet1!A1')." }),
@@ -555,7 +633,8 @@ export default defineToolPlugin({
     tool({
       name: "slides_create",
       label: "Create Google Slides Presentation",
-      description: "Create a new empty Google Slides presentation with the given title.",
+      description:
+        "Create a new empty Google Slides presentation with the given title. Returns the presentationId and a docs.google.com URL.",
       parameters: Type.Object({
         title: Type.String(),
       }),
@@ -575,7 +654,8 @@ export default defineToolPlugin({
     tool({
       name: "slides_get",
       label: "Get Slides Presentation",
-      description: "Fetch presentation structure (slides, layouts, etc.).",
+      description:
+        "READ the structure of a Google Slides presentation by presentationId — slides, layouts, text content. Call this — do not narrate — when the user asks to see/view/read/show/look at the contents of a presentation.",
       parameters: Type.Object({
         presentationId: Type.String(),
       }),
