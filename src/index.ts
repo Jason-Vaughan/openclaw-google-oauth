@@ -194,6 +194,24 @@ export default defineToolPlugin({
         return { id: res.data.id, labelIds: res.data.labelIds ?? [] };
       },
     }),
+    tool({
+      name: "gmail_message_trash",
+      label: "Trash Gmail Message",
+      description:
+        "DELETE / TRASH / REMOVE a Gmail message by id. Moves the message to Gmail's Trash folder — recoverable for 30 days, then auto-purged by Google. Use this to clean up messages. (For a permanent immediate delete, manage from the Gmail UI.)",
+      parameters: Type.Object({
+        id: Type.String({ description: "Gmail message id (from gmail_messages_list)." }),
+      }),
+      async execute({ id }, config) {
+        const auth = await createOAuthClient(authConfig(config));
+        const gmail = google.gmail({ version: "v1", auth });
+        const res = await withTimeout(
+          gmail.users.messages.trash({ userId: "me", id }),
+          "gmail.messages.trash"
+        );
+        return { id: res.data.id, labelIds: res.data.labelIds ?? [] };
+      },
+    }),
 
     // ── Calendar ──────────────────────────────────────────────────────────
     tool({
@@ -294,6 +312,28 @@ export default defineToolPlugin({
         return res.data;
       },
     }),
+    tool({
+      name: "calendar_event_delete",
+      label: "Delete Calendar Event",
+      description:
+        "DELETE / REMOVE / CANCEL a Google Calendar event by id. Recoverable from Google Calendar's Trash for ~30 days. Get the event id from calendar_events_list first. Defaults to the primary calendar.",
+      parameters: Type.Object({
+        calendarId: Type.Optional(Type.String({ default: "primary" })),
+        eventId: Type.String({ description: "Event id (from calendar_events_list)." }),
+      }),
+      async execute({ calendarId, eventId }, config) {
+        const auth = await createOAuthClient(authConfig(config));
+        const calendar = google.calendar({ version: "v3", auth });
+        await withTimeout(
+          calendar.events.delete({
+            calendarId: calendarId ?? "primary",
+            eventId,
+          }),
+          "calendar.events.delete"
+        );
+        return { ok: true, deletedEventId: eventId };
+      },
+    }),
 
     // ── Drive ─────────────────────────────────────────────────────────────
     tool({
@@ -391,6 +431,28 @@ export default defineToolPlugin({
           "drive.permissions.create"
         );
         return res.data;
+      },
+    }),
+    tool({
+      name: "drive_file_trash",
+      label: "Trash Drive File",
+      description:
+        "DELETE / TRASH / REMOVE a Google Drive file, folder, Doc, Sheet, or Slides presentation by id. Moves the file to Drive's Trash — recoverable for 30 days, then auto-purged by Google. Use this to clean up files this app created. (For an immediate permanent delete, manage from Drive UI or call this and empty the trash there.)",
+      parameters: Type.Object({
+        fileId: Type.String({ description: "Drive file id (from drive_files_list or the corresponding create tool's response)." }),
+      }),
+      async execute({ fileId }, config) {
+        const auth = await createOAuthClient(authConfig(config));
+        const drive = google.drive({ version: "v3", auth });
+        const res = await withTimeout(
+          drive.files.update({
+            fileId,
+            requestBody: { trashed: true },
+            fields: "id, trashed",
+          }),
+          "drive.files.update(trashed=true)"
+        );
+        return { ok: true, trashedFileId: res.data.id };
       },
     }),
 

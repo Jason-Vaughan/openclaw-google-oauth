@@ -69,15 +69,12 @@ When done, summarize: did EVERY step actually call its tool and return real data
 After verifying, paste this to delete the test artifacts:
 
 ```text
-Clean up the smoke-test artifacts you just created:
+Clean up the smoke-test artifacts you just created. Do every step IN ORDER, call the actual tool, and report what got cleaned up.
 
-1. Use drive_files_list with query: name contains 'Workspace smoke test'. Get the ids.
-2. For each file id returned, call drive_file_get (optional) then delete via the Drive API.
-   Note: this plugin does not currently expose a drive_file_delete tool; delete them manually in Google Drive (right-click → Move to trash) OR enable that tool in a future plugin version.
-3. Move the test email to trash by labeling it with TRASH: call gmail_message_modify with id = <id-from-step-3-of-smoke-test> and addLabelIds=["TRASH"].
-4. Delete the calendar event: this plugin does not currently expose a calendar_event_delete tool; delete it manually in Google Calendar OR enable that tool in a future plugin version.
+1. Use drive_files_list with query: name contains 'Workspace smoke test'. Report the ids you got.
+2. For EACH file id from step 1, call drive_file_trash with that fileId. Report a count of how many were trashed.
+3. Trash the smoke-test email by calling gmail_message_trash with the id from step 1 of the smoke test (the message you sent).
+4. Delete the calendar event by calling calendar_event_delete with the eventId from step 5 of the smoke test.
 
-Report what was cleaned up and what was left manual.
+Summarize: count of files trashed, count of emails trashed, count of events deleted.
 ```
-
-> **Note:** v0.1 of the plugin doesn't include delete tools for Drive files or Calendar events — those are good candidates for v0.2. Until then, manual cleanup in the Google UI is required.

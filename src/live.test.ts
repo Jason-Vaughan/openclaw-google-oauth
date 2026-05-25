@@ -119,6 +119,16 @@ describeIfToken("live: Gmail tools", () => {
     });
     expect(removed.data.labelIds).not.toContain("STARRED");
   }, TIMEOUT_MS);
+
+  it("gmail_message_trash moves the message to TRASH", async () => {
+    const res = await gmail.users.messages.trash({
+      userId: "me",
+      id: sentMessageId!,
+    });
+    expect(res.data.labelIds).toContain("TRASH");
+    // Suppress the afterAll cleanup attempt — it's already trashed.
+    sentMessageId = undefined;
+  }, TIMEOUT_MS);
 });
 
 // ─── Calendar ───────────────────────────────────────────────────────────────
@@ -179,6 +189,21 @@ describeIfToken("live: Calendar tools", () => {
     expect(res.data.id).toBe(eventId);
     expect(res.data.summary).toMatch(/^live-test event/);
   }, TIMEOUT_MS);
+
+  it("calendar_event_delete removes the event", async () => {
+    await calendar.events.delete({
+      calendarId: "primary",
+      eventId: eventId!,
+    });
+    // Verify it's gone (events.get on a deleted id returns status:cancelled).
+    const after = await calendar.events.get({
+      calendarId: "primary",
+      eventId: eventId!,
+    });
+    expect(after.data.status).toBe("cancelled");
+    // Suppress the afterAll cleanup attempt — it's already deleted.
+    eventId = undefined;
+  }, TIMEOUT_MS);
 });
 
 // ─── Drive (metadata) ───────────────────────────────────────────────────────
@@ -226,6 +251,18 @@ describeIfToken("live: Drive tools", () => {
     expect(res.data.id).toBe(testFileId);
     expect(res.data.mimeType).toBe("application/vnd.google-apps.spreadsheet");
   }, TIMEOUT_MS);
+
+  it("drive_file_trash moves the file to Drive trash", async () => {
+    const res = await drive.files.update({
+      fileId: testFileId!,
+      requestBody: { trashed: true },
+      fields: "id, trashed",
+    });
+    expect(res.data.trashed).toBe(true);
+    // Note: testFileId is intentionally NOT cleared — afterAll's
+    // drive.files.delete will still succeed against a trashed file and
+    // performs the permanent purge.
+  }, TIMEOUT_MS);
 });
 
 // drive_permission_create requires a real share target — opt-in via env var.
@@ -255,8 +292,8 @@ describeIfShareTarget("live: Drive sharing", () => {
     }
   });
 
-  it("drive_permission_create grants reader role", async () => {
-    const res = await drive.permissions.create({
+  it("drive_permission_create grants reader role (then revokes to leave no lingering share)", async () => {
+    const created = await drive.permissions.create({
       fileId: fileId!,
       sendNotificationEmail: false,
       requestBody: {
@@ -265,7 +302,13 @@ describeIfShareTarget("live: Drive sharing", () => {
         emailAddress: liveShareEmail!,
       },
     });
-    expect(res.data.role).toBe("reader");
+    expect(created.data.role).toBe("reader");
+    expect(created.data.id).toBeTruthy();
+    // Clean up the permission grant immediately so the test leaves no trace.
+    await drive.permissions.delete({
+      fileId: fileId!,
+      permissionId: created.data.id!,
+    });
   }, TIMEOUT_MS);
 });
 

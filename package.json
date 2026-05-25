@@ -1,7 +1,7 @@
 {
   "name": "@tangleclaw/openclaw-google-oauth",
   "version": "0.1.0",
-  "description": "OpenClaw plugin for Google Workspace — Gmail (send/read/label), Calendar (events), Drive (list/share), Docs (create/read/append), Sheets (create/read/append), Slides (create/read) via direct OAuth. Your OAuth client talks straight to Google. No third-party gateway, no IMAP App Password.",
+  "description": "OpenClaw plugin for Google Workspace — Gmail (send/read/label/trash), Calendar (events + delete), Drive (list/share/trash), Docs (create/read/append), Sheets (create/read/append), Slides (create/read) via direct OAuth. Your OAuth client talks straight to Google. No MCP server. No third-party gateway. No IMAP App Password.",
   "type": "module",
   "license": "MIT",
   "author": "Jason Vaughan",

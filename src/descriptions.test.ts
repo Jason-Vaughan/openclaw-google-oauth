@@ -23,8 +23,11 @@ const readTools = [
 const writeTools = [
   "gmail_message_send",
   "gmail_message_modify",
+  "gmail_message_trash",
   "calendar_event_create",
+  "calendar_event_delete",
   "drive_permission_create",
+  "drive_file_trash",
   "docs_create",
   "docs_append_text",
   "sheets_create",
@@ -60,6 +63,9 @@ const writeVerbs = [
   "label",
   "archive",
   "trash",
+  "delete",
+  "remove",
+  "cancel",
 ];
 
 function descriptionHits(desc: string, verbs: string[]): string[] {
