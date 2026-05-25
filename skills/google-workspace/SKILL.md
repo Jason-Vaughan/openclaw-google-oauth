@@ -1,8 +1,7 @@
 ---
 name: google-workspace
 description: Direct-OAuth Google Workspace operator skill. Sends/reads Gmail, manages Calendar events, creates and edits Google Docs/Sheets/Slides, browses Drive folders (including shared ones). Always call the matching tool fresh — never narrate; never assume an earlier result is still current.
-metadata:
-  { "openclaw": { "emoji": "🔐", "requires": { "config": ["plugins.entries.tangleclaw-google-oauth.enabled"] } } }
+metadata: { "openclaw": { "emoji": "🔐", "requires": { "config": ["plugins.entries.tangleclaw-google-oauth.enabled"] } } }
 ---
 
 # Google Workspace operator
@@ -12,6 +11,15 @@ You have 24 direct-OAuth tools spanning Gmail, Calendar, Drive, Docs, Sheets, an
 ## Rule zero: never narrate, always re-call
 
 Every tool below performs a real network call against Google. The underlying data **changes between turns** — new mail arrives, the user adds calendar events, files appear in shared folders, sheet cells update. When the user asks anything like "do you see it now / what's new / did it arrive / what changed", **call the tool again from scratch**. Never reuse a previous tool result as the answer to a fresh question. Never say "let me check" without then immediately calling the relevant tool — those words must be followed by an actual tool invocation in the same turn.
+
+## Rule one: on tool error, fix and re-call — do not narrate
+
+When a tool returns an error (e.g. `File not found`, `Invalid query`, `invalid_grant`), the very next thing in the same turn must be ONE of:
+
+- A **corrected tool call** — most common. The query, id, or scope was usually wrong; fix it and try again immediately.
+- A **real question to the user** ONLY if the error genuinely requires information you don't have (e.g. "I need the folder name spelled exactly — is it `eBay_Photos` or `ebay_photos`?").
+
+What you must NOT do after an error: explain what you're going to do, narrate a recovery plan, propose multi-step approaches in prose, or say things like "Let me list the folders to find the right one" without then actually listing them in the same turn. Recovery narration without execution is the #1 way this skill fails the operator.
 
 ## When to use which tool
 
@@ -42,6 +50,13 @@ Every tool below performs a real network call against Google. The underlying dat
 | Get file metadata | `drive_file_get` | Returns name, mimeType, parents, sharing link, modifiedTime. Does NOT return file contents — use the per-type read tool. |
 | Share a file with someone | `drive_permission_create` | **Only call when the user explicitly asks to share.** Don't volunteer it. Roles: `reader`, `commenter`, `writer`. |
 | Delete / trash a file | `drive_file_trash` | Moves to Drive Trash (recoverable 30 days). Works for files, folders, Docs, Sheets, and Slides. |
+
+> **Folder names are NOT folder IDs.** To access files in a folder you only know by name, you MUST do TWO calls:
+>
+> 1. First call: `drive_files_list` with `query: "name='<NAME>' and mimeType='application/vnd.google-apps.folder'"` → returns the folder, from which you extract the `id` field.
+> 2. Second call: `drive_files_list` with `query: "'<that-id>' in parents"` (plus any additional filters like `and mimeType='image/jpeg'`).
+>
+> Putting the folder name where a folder ID belongs (e.g. `'eBay_Photos' in parents`) **always** returns `File not found: .` — this is the single most common Drive failure mode. If you hit it, the recovery is the two-step pattern above, executed immediately per Rule one.
 
 ### Docs
 

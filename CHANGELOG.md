@@ -7,9 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+## [0.3.1] — 2026-05-25
 
-- `docs/skill-verification-prompt.md` — focused agent prompt that tests whether the `google-workspace` SKILL.md is actually biasing agent behavior (different from the smoke-test prompt, which tests tool surfaces). Six tests cover never-narrate enforcement, re-call-on-followup, parent-id Drive traversal, edit-tool selection, sharing safety, cleanup. Includes an interpretation table mapping each failure pattern to its root cause. Linked from README under the Skills section.
+Hot-fix release addressing a SKILL.md frontmatter parsing bug that prevented v0.3.0's `google-workspace` skill from biasing agent behavior reliably, plus tightening the skill content against the specific narrate-on-error failure mode observed on Volta 2026-05-24.
+
+### Fixed
+
+- **SKILL.md `metadata` frontmatter is now single-line.** Previous format (`metadata:` on one line, JSON value indented on the next) violated the OpenClaw embedded parser's documented single-line-only constraint ([Skills spec](https://docs.openclaw.ai/tools/skills): *"The parser used by the embedded agent supports single-line frontmatter keys only"* and *"metadata: Single-line JSON object only"*). Result on v0.3.0: the skill loaded structurally but its `metadata.openclaw.requires.config` gate behaved unpredictably, contributing to the skill not biasing the agent reliably on Volta.
+- **Drive folder-name-vs-id failure mode is now an explicit anti-pattern callout in the Drive subsection.** Volta hit this in production: agent received "list images in `eBay_Photos`", constructed `'eBay_Photos' in parents` (treating the folder name as if it were a folder ID), got `File not found: .`, then narrated a recovery plan instead of executing the two-step lookup. The skill's "Drive query syntax" section already documented the correct two-step pattern (find folder by name → use its `id` in `'<id>' in parents`), but as a single sentence buried below the tool table. Now hoisted to a bolded callout immediately under the Drive tool table, with the failure-mode error string named verbatim.
+- **New "Rule one: on tool error, fix and re-call — do not narrate" section** placed immediately after "Rule zero". Codifies the recovery discipline: after a tool error, the next thing in the same turn must be a corrected tool call or a real question to the user — never a narrated recovery plan. Specifically calls out "Let me list folders to find the right one" without then actually listing them as the #1 failure mode. Directly addresses the post-error narration observed on Volta.
+
+### Internal
+
+- **`src/skill-spec.test.ts`** — new test file enforcing OpenClaw skill/manifest spec compliance, complementing the existing content-shape tests in `src/skills.test.ts`. Catches the exact class of bug v0.3.0 shipped: (1) frontmatter has no multi-line keys; (2) `metadata` field, if present, has its JSON value on the same line as the key; (3) `metadata` JSON parses successfully; (4) `name` + `description` are non-empty strings; (5) plugin manifest has required top-level fields per [building-plugins spec](https://docs.openclaw.ai/plugins/building-plugins); (6) every path in the manifest's `skills` array points to an existing directory; (7) every name in `contracts.tools` has a matching registered tool definition.
+- `docs/skill-verification-prompt.md` — focused agent prompt for verifying the `google-workspace` SKILL.md actually biases agent behavior (vs. the smoke-test prompt, which tests tool surfaces). Six tests: never-narrate enforcement, re-call-on-followup, parent-id Drive traversal, edit-tool selection, sharing safety, cleanup. Includes an interpretation table mapping each failure pattern to its root cause. Linked from README under the Skills section. (Authored in PR #8 post-v0.3.0; reclassified from `### Added` to `### Internal` here since it's operator testing infrastructure, not user-visible plugin behavior.)
 
 ## [0.3.0] — 2026-05-25
 
