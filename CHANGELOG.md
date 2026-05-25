@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-05-25
+
 ### Changed
 
 - **Drive scope widened from `drive.file` to full `drive`.** The previous `drive.file` scope only let the plugin see files it had created itself — folders/files shared *with* the authorized account were invisible, even when the share permission was granted. That broke the natural mental model where Drive ACLs (read-only/writer share) decide what the agent can do. With full `drive`, the agent now sees the entire visible Drive of the authorized account, and per-file Google ACLs decide what's read-only vs writable vs owned. **Re-auth required** — changing scopes invalidates the existing refresh token; run `google_auth_start` + `google_auth_complete` once after upgrading. `drive_files_list` description now documents folder-search and contents-of-folder query syntax (`'<folder-id>' in parents`, `sharedWithMe = true`, `mimeType='application/vnd.google-apps.folder'`). New regression test in `src/live.test.ts` confirms the `sharedWithMe = true` query is callable under the widened scope (it returned an empty array under `drive.file` regardless of actual shares — that was the failure mode users hit when sharing folders like `eBay_Photos` with the agent).
