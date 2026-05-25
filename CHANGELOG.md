@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-05-25
+
 ### Added
 
 - **`skills/google-workspace/SKILL.md`** — first shipped OpenClaw skill. Loads into the agent's system prompt (gated on `plugins.entries.tangleclaw-google-oauth.enabled`) as an instructional layer documenting when to use which of the 24 tools, including: a "rule zero" against narrating without calling, an explicit "data changes between turns, always re-call" mandate, the Drive query syntax for folder traversal (`'<folder-id>' in parents`), multi-step workflow recipes (send-an-update-from-sheet, browse-photos-in-shared-subfolder, schedule-and-email, cleanup), an explicit warning that `docs_append_text` is the Google-Docs edit tool (NOT the workspace `edit` tool), and a sharing-safety rule that prohibits unsolicited `drive_permission_create` calls. This is the durable fix for the recurring narrate-don't-call failure mode that earlier description-tuning iterations only partially addressed.
