@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Rewrote every tool description (and the plugin description) to use natural-language verbs like "check", "read", "send", "schedule", "share" so smaller agent models can match user intent to tool. Previous descriptions like "List messages matching a Gmail search query" were too terse — models would narrate "I'll check the inbox" without actually selecting `gmail_messages_list`. New descriptions explicitly map common user phrasings ("check email", "read message", "find files") to the right tool, document the tool→tool flow (e.g. `gmail_messages_list` → `gmail_message_get`), and include practical examples of query/parameter syntax inline. Verified by re-running the unit + live test suites; no behavior or schema changes — only descriptions.
+
 ## [0.1.0] — 2026-05-24
 
 ### Added
