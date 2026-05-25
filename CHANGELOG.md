@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `src/descriptions.test.ts` — 23 unit tests that enforce description quality: read tools must include ≥2 read-intent verbs, write tools must include ≥1 write-intent verb, every tool must name a Google product or OAuth, and `docs_append_text` must claim the "edit" verb. Prevents description regressions.
 - Expanded `src/live.test.ts` to cover **all** 21 tools with real round-trips (when `RUN_LIVE_TESTS=1`): Gmail send→list→get→modify, Calendar create→list→get, Drive list/get, Docs create→get→append→verify, Sheets create→get→append→read, Slides create→get. All fixtures are auto-cleaned up via `afterAll` (messages trashed, events/files deleted). `drive_permission_create` test is additionally gated behind `LIVE_SHARE_TEST_EMAIL` so it doesn't share real files with arbitrary addresses.
 - `vitest.config.ts` — restricts test discovery to `src/**/*.test.ts` so stale compiled tests in `dist/` don't run.
+- `docs/smoke-test-prompt.md` — a single agent prompt that exercises every tool end-to-end (write, read, edit across all six APIs) plus a cleanup prompt and a table for interpreting failure modes (model picking wrong tool vs. narration vs. API error). Linked from README's "Verify it works" section. Useful after first install, after scope changes, or when bumping the agent's model.
 
 ## [0.1.0] — 2026-05-24
 

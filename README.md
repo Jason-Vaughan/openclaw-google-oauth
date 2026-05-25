@@ -105,6 +105,10 @@ https://www.googleapis.com/auth/presentations
 
 `drive.file` is the *minimal* Drive scope — the plugin only sees files it created or was explicitly given access to. If you need broader Drive access, fork and add the scope you want.
 
+## Verify it works end-to-end
+
+After completing the OAuth dance, paste the [end-to-end smoke test prompt](docs/smoke-test-prompt.md) into a fresh agent chat. It exercises every tool — sending mail, checking the inbox, creating + reading + editing a Google Doc, populating a Sheet, building a Slides deck, listing Drive files — and tells you exactly which step (if any) failed.
+
 ## The 7-day refresh-token expiry trap
 
 While the OAuth app is in **TESTING** status, Google expires refresh tokens after 7 days. You'll see `invalid_grant` errors. To fix:
