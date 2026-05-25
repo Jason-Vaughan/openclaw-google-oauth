@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `docs/skill-verification-prompt.md` — focused agent prompt that tests whether the `google-workspace` SKILL.md is actually biasing agent behavior (different from the smoke-test prompt, which tests tool surfaces). Six tests cover never-narrate enforcement, re-call-on-followup, parent-id Drive traversal, edit-tool selection, sharing safety, cleanup. Includes an interpretation table mapping each failure pattern to its root cause. Linked from README under the Skills section.
+
 ## [0.3.0] — 2026-05-25
 
 ### Added

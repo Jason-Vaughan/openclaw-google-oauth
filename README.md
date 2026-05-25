@@ -207,6 +207,8 @@ openclaw skills list | grep google-workspace
 # → ✓ ready   🔐 google-workspace   Direct-OAuth Google Workspace operator skill...
 ```
 
+For an *agent-level* verification (does the skill actually bias the agent's behavior the way it's supposed to?), paste the [skill verification prompt](docs/skill-verification-prompt.md) into a fresh agent chat. It runs six focused tests covering: never-narrate enforcement, re-call-on-followup, parent-id Drive query construction, edit-tool selection, sharing safety, and cleanup. Different from the smoke test — the smoke test confirms the *plugin* works, this confirms the *skill* is biasing the agent.
+
 ## Verify it works end-to-end
 
 After completing the OAuth dance, paste the [end-to-end smoke test prompt](docs/smoke-test-prompt.md) into a fresh agent chat. It exercises every tool — sending mail, checking the inbox, creating + reading + editing a Google Doc, populating a Sheet, building a Slides deck, listing Drive files — and tells you exactly which step (if any) failed.
