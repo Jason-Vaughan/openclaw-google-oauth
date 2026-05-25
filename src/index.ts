@@ -77,7 +77,7 @@ export default defineToolPlugin({
       name: "gmail_messages_list",
       label: "List Gmail Messages",
       description:
-        "READ the Gmail inbox. Call this tool — do not describe what you would do — whenever the user asks to: check email, read inbox, see messages, look at recent mail, search emails, find a message, what mail did I get, any new email, what's in my inbox. Returns a list of message ids and snippets — call gmail_message_get with one of those ids to read the full body. Default returns the 10 most recent messages. Filter with Gmail search syntax: `is:unread`, `newer_than:1d`, `from:alice@example.com`, `subject:invoice`, `has:attachment`, `in:inbox`.",
+        "READ the Gmail inbox. ALWAYS call this tool — do not describe what you would do, do not reuse previous results — whenever the user asks to: check email, read inbox, see messages, look at recent mail, search emails, find a message, what mail did I get, any new email, what's in my inbox, did anything arrive, is there a reply yet. The inbox changes between calls (new mail arrives in real time), so always re-run a fresh query — never assume an earlier result is still current. Returns a list of message ids and snippets — call gmail_message_get with one of those ids to read the full body. Default returns the 10 most recent messages. Filter with Gmail search syntax: `is:unread`, `newer_than:1d`, `from:alice@example.com`, `subject:invoice`, `has:attachment`, `in:inbox`.",
       parameters: Type.Object({
         query: Type.Optional(
           Type.String({
@@ -218,7 +218,7 @@ export default defineToolPlugin({
       name: "calendar_events_list",
       label: "List Calendar Events",
       description:
-        "READ events from the Google Calendar. Call this tool — do not describe what you would do — whenever the user asks to: see, view, read, show, list, check, fetch, find, look up, look at, browse, what's on the calendar, what events I have, what's scheduled, what appointments / meetings / events are coming up, what events were added, what's on the schedule today/tomorrow/this week. Returns events in time order from the primary calendar (default), next 25 (default). To include past events, pass `timeMin` like `2020-01-01T00:00:00Z`. To filter a specific day or range, pass `timeMin` and `timeMax` (RFC3339).",
+        "READ events from the Google Calendar. ALWAYS call this tool — do not narrate, do not reuse previous results — whenever the user asks to: see, view, read, show, list, check, fetch, find, look up, look at, browse, what's on the calendar, what events I have, what's scheduled, what appointments / meetings / events are coming up, what events were added, what's on the schedule today/tomorrow/this week, did the user just add something to the calendar. The calendar changes between calls (the user adds/removes events between turns), so always re-run a fresh query — never assume an earlier result is still current. Returns events in time order from the primary calendar (default), next 25 (default). To include past events, pass `timeMin` like `2020-01-01T00:00:00Z`. To filter a specific day or range, pass `timeMin` and `timeMax` (RFC3339).",
       parameters: Type.Object({
         calendarId: Type.Optional(Type.String({ default: "primary" })),
         timeMin: Type.Optional(
@@ -340,7 +340,7 @@ export default defineToolPlugin({
       name: "drive_files_list",
       label: "List Drive Files",
       description:
-        "READ / LIST Google Drive files and folders. Call this — do not narrate — when the user asks to: see/list/show/find/browse/search files in Drive, what files are there, what docs/sheets/slides did I create, what folders has the user shared with me, look for a file. Sees the authorized account's entire Drive: files the app created, files shared with the account, files in shared folders. To find a folder by name: `mimeType='application/vnd.google-apps.folder' and name='eBay_Photos'`. To find contents of a folder: `'<folder-id>' in parents`. Other query examples: `mimeType='application/vnd.google-apps.spreadsheet'`, `name contains 'invoice'`, `sharedWithMe = true`. Omit query for the 25 most recent.",
+        "READ / LIST Google Drive files and folders. ALWAYS call this tool — do not narrate, do not assume previous results are still current — when the user asks to: see/list/show/find/browse/search files in Drive, what files are there, what docs/sheets/slides did I create, what folders has the user shared with me, look for a file, what's IN this folder, what's in the subfolder, did the user just add something, do you see the new file, is anything new. The Drive contents change between calls (the user adds/removes files between turns), so always re-run a fresh query — never reuse a previous result. To find folder contents (most common follow-up): `'<folder-id>' in parents` (literal single quotes around the folder id). To find a folder by name: `mimeType='application/vnd.google-apps.folder' and name='eBay_Photos'`. Other query examples: `mimeType='application/vnd.google-apps.spreadsheet'`, `name contains 'invoice'`, `sharedWithMe = true`. Omit query for the 25 most recent files overall. Sees the authorized account's entire Drive: files the app created, files shared with the account, files in shared folders. Per-file Google ACLs decide what's read-only vs writable.",
       parameters: Type.Object({
         query: Type.Optional(
           Type.String({
@@ -483,7 +483,7 @@ export default defineToolPlugin({
       name: "docs_get",
       label: "Get Google Doc",
       description:
-        "READ the full structured contents of a Google Doc by documentId — paragraphs, headings, tables, formatting. Call this — do not narrate — when the user asks to read/view/fetch/show/open/see what a Google Doc says.",
+        "READ the full structured contents of a Google Doc by documentId — paragraphs, headings, tables, formatting. ALWAYS call this tool — do not narrate, do not reuse previous results — when the user asks to read/view/fetch/show/open/see what a Google Doc says, OR asks whether the doc was updated / has new content. Doc contents change between calls — always re-run a fresh query.",
       parameters: Type.Object({
         documentId: Type.String(),
       }),
@@ -582,7 +582,7 @@ export default defineToolPlugin({
       name: "sheets_values_get",
       label: "Read Sheet Values",
       description:
-        "READ cell values from a Google Sheet. Call this — do not narrate — when the user asks to see/read/fetch/show/look at/view data in a spreadsheet or the contents of a sheet. Range is A1 notation: `Sheet1!A1:C10` (a rectangle), `Sheet1!A:A` (whole column A), `Sheet1` (all data on a tab). Returns a 2D array of cell values.",
+        "READ cell values from a Google Sheet. ALWAYS call this tool — do not narrate, do not reuse previous results — when the user asks to see/read/fetch/show/look at/view data in a spreadsheet or the contents of a sheet, OR asks whether the sheet changed / has new data / was updated. Sheet contents change between calls — always re-run a fresh query. Range is A1 notation: `Sheet1!A1:C10` (a rectangle), `Sheet1!A:A` (whole column A), `Sheet1` (all data on a tab). Returns a 2D array of cell values.",
       parameters: Type.Object({
         spreadsheetId: Type.String(),
         range: Type.String(),
