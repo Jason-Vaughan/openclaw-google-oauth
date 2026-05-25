@@ -185,6 +185,28 @@ https://www.googleapis.com/auth/presentations
 
 **Full `drive` scope** is requested intentionally so the agent can see and act on folders/files shared *with* the authorized account, not just files it created itself. The natural permission model still applies: per-file Drive ACLs decide what the agent can actually do (shared-as-reader = read-only, shared-as-writer = read+write, files the agent owns = full control). If you want to restrict the plugin to only files it created, fork and swap `drive` for `drive.file` in `src/auth.ts`.
 
+## Skills (shipped with the plugin)
+
+In addition to the 24 tools, this plugin ships an OpenClaw **skill** at [`skills/google-workspace/SKILL.md`](skills/google-workspace/SKILL.md). Skills are `SKILL.md` files that load into the agent's **system prompt** as an instructional layer — they don't compete with tools, they teach the agent *when* and *how* to use them.
+
+The `google-workspace` skill is automatically discovered by OpenClaw when this plugin is enabled (gated via `plugins.entries.tangleclaw-google-oauth.enabled`). It encodes:
+
+- A "rule zero" against narrating without calling — pushes the agent to invoke tools, not describe what it would do.
+- An explicit "data changes between turns, always re-call" mandate — fixes the failure mode where the agent reuses an old result on a follow-up question.
+- The Drive query syntax for folder traversal (`'<folder-id>' in parents`) — the agent often couldn't construct this on its own from tool descriptions alone.
+- Multi-step workflow recipes for common operations: send-an-update-from-sheet, browse-photos-in-shared-subfolder, schedule-and-email, cleanup test artifacts.
+- An explicit warning that `docs_append_text` is THE Google-Docs edit tool — not OpenClaw's built-in workspace `edit` tool (which is for local files only).
+- A sharing-safety rule that prohibits volunteered `drive_permission_create` calls.
+
+This is the durable fix for small-model tool-selection reliability. Description-only tuning was iterative and reactive; the skill loads once and biases agent behavior across all Workspace operations.
+
+You can verify the skill is loaded after installing the plugin:
+
+```bash
+openclaw skills list | grep google-workspace
+# → ✓ ready   🔐 google-workspace   Direct-OAuth Google Workspace operator skill...
+```
+
 ## Verify it works end-to-end
 
 After completing the OAuth dance, paste the [end-to-end smoke test prompt](docs/smoke-test-prompt.md) into a fresh agent chat. It exercises every tool — sending mail, checking the inbox, creating + reading + editing a Google Doc, populating a Sheet, building a Slides deck, listing Drive files — and tells you exactly which step (if any) failed.
