@@ -209,6 +209,32 @@ openclaw skills list | grep google-workspace
 
 For an *agent-level* verification (does the skill actually bias the agent's behavior the way it's supposed to?), paste the [skill verification prompt](docs/skill-verification-prompt.md) into a fresh agent chat. It runs six focused tests covering: never-narrate enforcement, re-call-on-followup, parent-id Drive query construction, edit-tool selection, sharing safety, and cleanup. Different from the smoke test — the smoke test confirms the *plugin* works, this confirms the *skill* is biasing the agent.
 
+### If SKILL.md isn't reliably biasing your agent: inline the guidance into AGENTS.md
+
+On smaller open-weights models (e.g. `qwen2.5-14b-instruct` and similar), the skill content sometimes loads but doesn't reliably bias agent behavior — the agent will name the right tools but defer to narrating ("I'll start by calling the OAuth flow...") instead of actually invoking them. This is a known weakness of smaller models at tool-calling, not a plugin defect.
+
+If you observe this pattern, the highest-leverage fix on the operator side is to **inline the skill content into your workspace `AGENTS.md`** rather than relying on SKILL.md activation:
+
+```bash
+# On your OpenClaw node:
+# Open the workspace AGENTS.md and append the relevant tool + rule guidance
+# from skills/google-workspace/SKILL.md. The easiest path is to ask the
+# agent itself: "Add full info about the openclaw-google-oauth tools and
+# the google-workspace skill rules to your AGENTS.md so every session
+# knows about them." (Verified to work on Volta 2026-05-26.)
+$EDITOR ~/.openclaw/workspace/AGENTS.md
+```
+
+**Why this works:** `AGENTS.md` is loaded into every session's startup context unconditionally — no activation gate, no `requires.config` parsing, no skill-eligibility filtering. The same content that may sometimes fail to land via SKILL.md lands every time via AGENTS.md.
+
+**Trade-offs:**
+
+- **No auto-sync with plugin upgrades.** If this plugin ships a new version with new tools or rules, you'll need to manually update `AGENTS.md`. SKILL.md upgrades come for free when you bump the plugin.
+- **Always in the prompt.** AGENTS.md content costs context tokens on every session, even sessions unrelated to Google Workspace. On a 1M-context model this is noise; on smaller-context deployments, weigh against other workspace content.
+- **Workspace-scoped, not plugin-scoped.** Your edits live in `~/.openclaw/workspace/AGENTS.md` and get bunkered with the rest of your workspace. They survive container rebuilds and restore from the bunker repo, but they don't follow the plugin to a different deployment.
+
+**Recommended pattern:** keep the plugin's `SKILL.md` as the baseline that everyone gets out of the box, and use `AGENTS.md` as your operator-side override when reliability matters more than portability. Larger models (Claude Haiku/Sonnet, GPT-4o-class) typically don't need the override; smaller open-weights models often do.
+
 ## Verify it works end-to-end
 
 After completing the OAuth dance, paste the [end-to-end smoke test prompt](docs/smoke-test-prompt.md) into a fresh agent chat. It exercises every tool — sending mail, checking the inbox, creating + reading + editing a Google Doc, populating a Sheet, building a Slides deck, listing Drive files — and tells you exactly which step (if any) failed.
