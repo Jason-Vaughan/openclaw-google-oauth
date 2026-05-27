@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.3] — 2026-05-27
+
+### Internal
+
+- **Human-readable description on ClawHub.** Rewrote the `description` field in both `package.json` and `openclaw.plugin.json` from a parenthetical feature-enum (`Gmail (send/read/label/trash), Calendar (events + delete), ...`) to the README's opener phrasing — leads with the operator's benefit ("24 Google Workspace tools for your OpenClaw agent"), keeps the "No MCP / No gateway / No App Password" differentiator, and drops the comma-soup that made the ClawHub listing card hard to scan. No behavior change.
+
 ## [0.3.2] — 2026-05-27
 
 ### Internal
