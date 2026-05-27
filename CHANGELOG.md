@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.5] — 2026-05-27
+
+### Internal
+
+- **README documents the install-time `openclaw plugins enable` step** while [openclaw/openclaw#87188](https://github.com/openclaw/openclaw/issues/87188) is open. Operators installing from ClawHub today hit a "Missing requirements: config:plugins.entries.tangleclaw-google-oauth.enabled" message on the skill panel because community-installed plugins don't auto-enable on install (only bundled plugins do). Until OpenClaw resolves the bundled-only short-circuit in its activation logic, operators need to run `openclaw plugins enable tangleclaw-google-oauth` after install — the README now shows that as part of the standard install sequence with a callout explaining why, and a note that this plugin's manifest already ships `enabledByDefault: true`, so the second step disappears automatically once #87188 ships. No behavior change in the plugin itself.
+
 ## [0.3.4] — 2026-05-27
 
 ### Internal

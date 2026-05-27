@@ -72,7 +72,10 @@ This plugin is **none of those.** It loads in-process inside the OpenClaw gatewa
 
 ```bash
 openclaw plugins install clawhub:@tangleclaw/openclaw-google-oauth
+openclaw plugins enable tangleclaw-google-oauth
 ```
+
+> **Why two commands?** Community-installed OpenClaw plugins currently don't auto-enable on install — only bundled plugins do, due to a gating quirk in the OpenClaw runtime (filed upstream as [openclaw/openclaw#87188](https://github.com/openclaw/openclaw/issues/87188), with empirical confirmation). The plugin's tools load fine after just `install`, but the `google-workspace` SKILL.md (the agent-bias layer that biases against narrating-without-calling, encodes recipes, etc.) shows as **blocked** with `Missing requirements: config:plugins.entries.tangleclaw-google-oauth.enabled`. The `plugins enable` command flips that flag and activates the skill. This plugin already ships `enabledByDefault: true` in its manifest, so the second command will become unnecessary once #87188 ships.
 
 Or for local dev (e.g. cloned this repo):
 
@@ -81,6 +84,7 @@ cd openclaw-google-oauth
 npm install
 npm run plugin:build
 openclaw plugins install /path/to/openclaw-google-oauth
+openclaw plugins enable tangleclaw-google-oauth
 ```
 
 ## Setup (one time)
