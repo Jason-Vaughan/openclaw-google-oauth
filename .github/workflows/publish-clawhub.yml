@@ -1,0 +1,98 @@
+name: Publish to ClawHub
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish (e.g. v0.3.2). Defaults to triggering ref.'
+        required: false
+        type: string
+
+concurrency:
+  group: clawhub-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  # `id-token: write` is here pre-emptively in case ClawHub later requires
+  # OIDC-based trusted-publisher auth. Today's flow is token-based and only
+  # uses `contents: read` for checkout.
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Install ClawHub CLI
+        run: npm install -g clawhub
+
+      - name: Verify secret is configured
+        env:
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+        run: |
+          if [ -z "$CLAWHUB_TOKEN" ]; then
+            echo "::error::CLAWHUB_TOKEN secret is not configured on this repository."
+            echo "Add it under Settings → Secrets and variables → Actions. Generate the token via clawhub.ai (or run 'clawhub login --device --label ci-publish' on a machine with browser access)."
+            exit 1
+          fi
+
+      - name: Login to ClawHub
+        env:
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+        run: clawhub login --token "$CLAWHUB_TOKEN" --no-browser
+
+      - name: Derive version from tag
+        id: ver
+        env:
+          TAG_REF: ${{ inputs.tag || github.ref_name }}
+        run: |
+          # Strip leading "v" — git tags are "v0.3.2", clawhub --version wants "0.3.2"
+          TAG="$TAG_REF"
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Publish dry-run (sanity check)
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          clawhub package publish . \
+            --family code-plugin \
+            --version "$VERSION" \
+            --source-repo "${{ github.repository }}" \
+            --source-ref "$TAG" \
+            --changelog "Automated publish from tag $TAG" \
+            --dry-run
+
+      - name: Publish
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          clawhub package publish . \
+            --family code-plugin \
+            --version "$VERSION" \
+            --source-repo "${{ github.repository }}" \
+            --source-ref "$TAG" \
+            --changelog "Automated publish from tag $TAG"
