@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.4] — 2026-05-27
+
+### Internal
+
+- **`enabledByDefault: true` in `openclaw.plugin.json`.** Sets the manifest hint so OpenClaw treats the plugin as enabled-on-install when its activation logic respects the field for community-origin plugins. The `SKILL.md` gates itself on `plugins.entries.tangleclaw-google-oauth.enabled` (canonical pattern shared with `tavily`, `open-prose`, etc.) — without this manifest hint, fresh installs come up with the skill in a "blocked / missing requirements" state and the operator must run `openclaw plugins enable tangleclaw-google-oauth` manually. With this hint, the install flow should flip the flag automatically. Many bundled OpenClaw plugins (`azure-speech`, `anthropic`, `browser`, etc.) use the same field. No behavior change for installs that already had the plugin explicitly enabled.
+
 ## [0.3.3] — 2026-05-27
 
 ### Internal

@@ -2,7 +2,8 @@
   "id": "tangleclaw-google-oauth",
   "name": "TangleClaw Google OAuth",
   "description": "Google Workspace tools for your OpenClaw agent — Gmail, Calendar, Drive, Docs, Sheets, Slides via direct OAuth. 24 tools from one OAuth client. No MCP server to run, no third-party gateway, no IMAP App Password workaround. Install once, complete the OAuth dance, done.",
-  "version": "0.3.3",
+  "version": "0.3.4",
+  "enabledByDefault": true,
   "activation": {
     "onStartup": true
   },
