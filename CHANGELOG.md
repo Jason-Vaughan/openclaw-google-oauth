@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] — 2026-05-27
+
+### Internal
+
+- **Add `openclaw.compat.pluginApi` + `openclaw.build.openclawVersion` to `package.json`** so ClawHub's `package publish` accepts the plugin as an external code-plugin artifact. Values match the installed openclaw runtime (`>=2026.5.22` / `2026.5.22`). No user-visible behavior change — this is purely the ClawHub publish gate.
+- **Reconcile manifest version drift.** `openclaw.plugin.json` was lagging at `0.3.0` while `package.json` had been bumped to `0.3.1` in PR #9. Regenerated with `openclaw plugins build` so both files report `0.3.2` for this release.
+
 ## [0.3.1] — 2026-05-25
 
 Hot-fix release addressing a SKILL.md frontmatter parsing bug that prevented v0.3.0's `google-workspace` skill from biasing agent behavior reliably, plus tightening the skill content against the specific narrate-on-error failure mode observed on Volta 2026-05-24.

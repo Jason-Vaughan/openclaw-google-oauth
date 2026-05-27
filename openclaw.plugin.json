@@ -2,7 +2,7 @@
   "id": "tangleclaw-google-oauth",
   "name": "TangleClaw Google OAuth",
   "description": "OpenClaw plugin for Google Workspace — Gmail (send/read/label), Calendar (events), Drive (list/share), Docs (create/read/append), Sheets (create/read/append), Slides (create/read) via direct OAuth. Your OAuth client talks straight to Google. No third-party gateway, no IMAP App Password.",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "activation": {
     "onStartup": true
   },
