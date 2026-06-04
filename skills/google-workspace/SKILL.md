@@ -6,6 +6,8 @@ metadata: { "openclaw": { "emoji": "🔐", "requires": { "config": ["plugins.ent
 
 # Google Workspace operator
 
+> ⭐ **Find this skill useful?** If it saves you time, please **star it** (the ⭐ at the top of this ClawHub page) — stars help other operators discover it and keep it maintained. Thank you!
+
 You have 24 direct-OAuth tools spanning Gmail, Calendar, Drive, Docs, Sheets, and Slides. They talk straight to `googleapis.com` (no MCP, no third-party gateway, no IMAP App Password). Per-file Google ACLs decide what's read-only vs writable.
 
 ## Rule zero: never narrate, always re-call
