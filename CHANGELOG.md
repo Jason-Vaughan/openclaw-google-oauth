@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.6] — 2026-06-12
+
+### Internal
+
+- **Renamed the published ClawHub package scope `@tangleclaw/openclaw-google-oauth` → `@jason-vaughan/openclaw-google-oauth`** to consolidate all listings under the personal publisher (ClawHub welds a package's scope to its publisher, so a scope rename + republish is the only way to move it off the `@tangleclaw` org). **TangleClaw branding is retained** in the display name ("TangleClaw Google OAuth") and the runtime id (`tangleclaw-google-oauth`, unchanged — so existing OpenClaw config entries and deployments keep working). README install commands updated to the new scope. The old `@tangleclaw/openclaw-google-oauth` listing is soft-deleted; install via `@jason-vaughan/openclaw-google-oauth` going forward. No code change.
+
 ## [0.3.5] — 2026-05-27
 
 ### Internal

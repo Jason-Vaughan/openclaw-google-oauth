@@ -1,4 +1,4 @@
-# @tangleclaw/openclaw-google-oauth
+# @jason-vaughan/openclaw-google-oauth
 
 <img src="https://github.com/Jason-Vaughan/project-assets/raw/main/openclaw-google-oauth-no-mcp.png" align="right" width="160" alt="No MCP server required">
 
@@ -71,7 +71,7 @@ This plugin is **none of those.** It loads in-process inside the OpenClaw gatewa
 ## Install
 
 ```bash
-openclaw plugins install clawhub:@tangleclaw/openclaw-google-oauth
+openclaw plugins install clawhub:@jason-vaughan/openclaw-google-oauth
 openclaw plugins enable tangleclaw-google-oauth
 ```
 
@@ -281,9 +281,9 @@ After step 7, the token lives until you explicitly revoke it from the page in st
 
 For a personal eBay-store / agent / hobby setup that authorizes a single Gmail account against itself, Publishing is the right move.
 
-## More from @tangleclaw
+## More from TangleClaw
 
-- [`@tangleclaw/openclaw-ebay-research`](https://github.com/Jason-Vaughan/openclaw-ebay-research) — read-only eBay market research tools for your OpenClaw agent (search live listings, sold-history, category lookup) via direct OAuth. Useful alongside this plugin when your agent needs to email Gmail summaries of eBay research, drop a sold-price comparison into a Drive spreadsheet, or schedule a Calendar reminder around a listing window. Install: `openclaw plugins install clawhub:@tangleclaw/openclaw-ebay-research`.
+- [`@jason-vaughan/openclaw-ebay-research`](https://github.com/Jason-Vaughan/openclaw-ebay-research) — read-only eBay market research tools for your OpenClaw agent (search live listings, sold-history, category lookup) via direct OAuth. Useful alongside this plugin when your agent needs to email Gmail summaries of eBay research, drop a sold-price comparison into a Drive spreadsheet, or schedule a Calendar reminder around a listing window. Install: `openclaw plugins install clawhub:@jason-vaughan/openclaw-ebay-research`.
 
 ## License
 
