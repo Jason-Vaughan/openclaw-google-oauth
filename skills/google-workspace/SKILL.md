@@ -1,6 +1,6 @@
 ---
 name: google-workspace
-description: Direct-OAuth Google Workspace operator skill. Sends/reads Gmail, manages Calendar events, creates and edits Google Docs/Sheets/Slides, browses Drive folders (including shared ones). Always call the matching tool fresh — never narrate; never assume an earlier result is still current.
+description: Direct-OAuth Google Workspace operator skill for Gmail, Calendar, Drive, Docs, Sheets, and Slides. Activates ONLY on an explicit user request to operate on their Google account ("check my inbox", "send an email to…", "add a calendar event", "list the files in…"). Does NOT activate on casual mentions of email, meetings, or files in conversation. Performs LIVE operations on a real account; send/share/edit/delete require the user's explicit instruction per the tier gate inside.
 metadata: { "openclaw": { "emoji": "🔐", "requires": { "config": ["plugins.entries.tangleclaw-google-oauth.enabled"] } } }
 ---
 
@@ -8,7 +8,42 @@ metadata: { "openclaw": { "emoji": "🔐", "requires": { "config": ["plugins.ent
 
 > ⭐ **Find this skill useful?** If it saves you time, please **star it** (the ⭐ at the top of this ClawHub page) — stars help other operators discover it and keep it maintained. Thank you!
 
+> ⚠️ **Live-account warning (read before first use).** Every tool here operates on
+> a **real Google account** over OAuth. This skill can **send email that real
+> people receive, share files with real people, append to real documents, and
+> move real mail/files/events to Trash**. There is no sandbox and no dry-run
+> mode. Deletions go to Trash (recoverable ~30 days); sent email and shares are
+> **not reversible**. Grant the narrowest OAuth scopes you can, avoid pointing
+> it at shared or highly sensitive accounts, and expect the confirmation gate
+> below to be enforced.
+
 You have 24 direct-OAuth tools spanning Gmail, Calendar, Drive, Docs, Sheets, and Slides. They talk straight to `googleapis.com` (no MCP, no third-party gateway, no IMAP App Password). Per-file Google ACLs decide what's read-only vs writable.
+
+## When this skill applies — and when it does not
+
+Activate only when the user **explicitly asks for an operation on their Google
+account**: reading or sending mail, managing calendar events, finding or
+sharing Drive files, creating or editing Docs/Sheets/Slides.
+
+Do **NOT** activate because:
+- an email address, meeting, or document was merely *mentioned* in conversation;
+- you infer the user "might want" something sent, scheduled, shared, or cleaned up;
+- another skill's task touches similar concepts (e.g. discussing a schedule is
+  not a request to edit the calendar).
+
+If it is ambiguous whether the user wants a live operation, ask — do not call.
+
+## Operation tiers — the confirmation gate
+
+| Tier | Tools | Rule |
+| --- | --- | --- |
+| **READ** | `gmail_messages_list`, `gmail_message_get`, `calendar_events_list`, `calendar_event_get`, `drive_files_list`, `drive_file_get`, `docs_get`, `sheets_get`, `sheets_values_get`, `slides_get` | Free to call once the skill is legitimately active. Re-call fresh per Rule zero. |
+| **WRITE-CREATE** | `docs_create`, `sheets_create`, `slides_create`, `calendar_event_create`, `docs_append_text`, `sheets_values_append` | Only on an explicit user request that names (or clearly implies) the artifact. Never create "helpfully" as a side effect. |
+| **SEND / SHARE / DELETE / MODIFY** | `gmail_message_send`, `drive_permission_create`, `gmail_message_trash`, `drive_file_trash`, `calendar_event_delete`, `gmail_message_modify` | **One explicit user instruction per operation, given in the current conversation.** Never inferred from context, never batched beyond exactly what was asked, never repeated after an unconfirmed outcome. Before acting on anything ambiguous (wrong-looking recipient, multiple files matching a name, a delete that would catch more than discussed), state what you are about to do and get a yes first. |
+
+The OAuth tools (`google_auth_start` / `google_auth_complete`) sit outside the
+tiers: call them only for the token-refresh flow described at the bottom, and
+never volunteer a re-auth the user didn't ask about.
 
 ## Rule zero: never narrate, always re-call
 
@@ -135,13 +170,15 @@ Folder traversal: first find the parent folder's id with `name='X' and mimeType=
 ### "Clean up the test artifacts"
 
 1. `drive_files_list` with the test name pattern → get ids.
-2. `drive_file_trash` for each id.
-3. `gmail_message_trash` for any test emails.
-4. `calendar_event_delete` for any test events.
+2. **Show the user the exact list of matches and get a yes** (deletes are
+   tier-gated; a pattern can catch more than the user had in mind).
+3. `drive_file_trash` for each confirmed id.
+4. `gmail_message_trash` for any confirmed test emails.
+5. `calendar_event_delete` for any confirmed test events.
 
 ## Sharing safety
 
-`drive_permission_create` actually shares real files with real people via email. **Only call it when the user explicitly says "share X with Y@email.com" or similar.** Do not volunteer to share files. Do not assume the user wants something shared just because they mentioned an email address in conversation. When in doubt, ask first.
+`drive_permission_create` actually shares real files with real people via email. **Only call it when the user explicitly says "share X with Y@email.com" or similar** — it sits in the SEND/SHARE/DELETE/MODIFY tier of the confirmation gate above. Do not volunteer to share files. Do not assume the user wants something shared just because they mentioned an email address in conversation. When in doubt, ask first.
 
 ## OAuth and refresh tokens
 

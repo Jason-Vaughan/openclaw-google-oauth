@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-07-06
+
+### Changed
+
+- **Answered all three findings from the ClawHub Skillspector security audit of v0.3.6** (verdict "Review", three medium-severity findings) with doctrine changes in `SKILL.md`:
+  - **Vague triggers** → the frontmatter `description` now states the skill activates ONLY on an explicit user request to operate on the Google account, and a new "When this skill applies — and when it does not" section forbids activation on casual mentions of email/meetings/files or inferred intent.
+  - **Missing user warnings** → a prominent live-account warning block now leads the skill: real sends, real shares, real trash operations, no sandbox/dry-run, sends and shares not reversible, narrowest-scopes guidance.
+  - **Unrestricted tool access** → a three-tier confirmation gate now governs all 24 tools: READ (free once active), WRITE-CREATE (explicit request naming the artifact), and SEND/SHARE/DELETE/MODIFY (one explicit user instruction per operation, never inferred, never batched beyond what was asked, ambiguity requires a stated plan + yes). The "clean up test artifacts" recipe now shows the confirm-list-before-delete step, and Sharing safety references the gate.
+
 ## [0.3.6] — 2026-06-12
 
 ### Internal
