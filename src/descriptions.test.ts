@@ -26,12 +26,16 @@ const writeTools = [
   "gmail_message_trash",
   "calendar_event_create",
   "calendar_event_delete",
+  "calendar_event_update",
   "drive_permission_create",
   "drive_file_trash",
   "docs_create",
   "docs_append_text",
+  "docs_batch_update",
   "sheets_create",
   "sheets_values_append",
+  "sheets_values_update",
+  "sheets_batch_update",
   "slides_create",
 ];
 
