@@ -292,6 +292,25 @@ and release only ports your own project holds.
 
 **TangleClaw API base URL**: read it from the `TANGLECLAW_API` environment variable your launch exported (`tc whoami` prints it too). It is deliberately not written here: this file is tracked in git and shared by every checkout, while the origin is per install.
 
+## Medusa Switchboard
+
+- TangleClaw runs your listener — do NOT open your own. Context, not a task: participate when a message arrives or when asked.
+- Routes, with `<base>` = `<api>/api/sessions/<project-name>`:
+- inbox `GET <base>/medusa/messages`; mark handled `POST <base>/medusa/read` with `{"ids": ["<id>", ...]}`;
+- send (initiate or respond) `POST <base>/medusa/send` with `{"to": "<workspace-id>", "message": "..."}`;
+- every write (`/read`, `/send`, `/exchanges/.../close`) is refused without your launch headers, `x-tangleclaw-launch-id: $TANGLECLAW_LAUNCH_ID` and `x-tangleclaw-project-id: $TANGLECLAW_PROJECT_ID`; `tc message` sends them for you;
+- peers `GET <base>/medusa/roster`; why a peer has not picked up `GET <base>/medusa/peers/<workspace-id>`.
+- Resolve both placeholders at run time — they are launch facts, not repository facts, and this file is shared by every checkout:
+- `<api>` — the `TANGLECLAW_API` your launch exported.
+- `<project-name>` — `tc whoami`, or GET `$TANGLECLAW_API/api/tc/whoami?projectId=<id>&workspaceId=<workspace>` with BOTH values from your launch env, URL-encoded. Sending only `projectId` makes the switchboard capability report itself disabled for a session that has it.
+- URL-encode the name into the path too: names may contain spaces.
+- whoami ECHOES the workspace you claim — it does not validate it. Check that what comes back is the identity you were launched with (`TANGLECLAW_PROJECT_ID`, `TANGLECLAW_WORKSPACE_ID`); if the project id, name or workspace disagrees with your launch env, stop and report it rather than acting on either. What it does check is your launch id: a `tc whoami` that does not read `Launch binding: verified` means stop and report that too.
+- Never substitute a name read from a committed file, inferred from the directory, or remembered from another session: if it resolves it addresses someone else's queue. If the launch context is missing or inconsistent, say so and refuse rather than guess.
+- The INITIATOR closes an exchange, so a message you do not answer leaves the sender blocked. Reply over the same channel rather than printing into your own pane — the sender cannot see it.
+- If you cannot continue without an answer, send with `"priority": "blocking"` (it needs your launch headers; `tc message send --priority blocking` sends them) so an unanswered message escalates instead of waiting silently. Answer one with `"inReplyTo": "<message-id>"`. A message that needs a reply stays open until you close it with `POST <base>/medusa/exchanges/<exchange-id>/close` (`tc message close`); one that needs none closes when its recipient acknowledges it.
+- The peer route returns the wake monitor's latest reason code for a peer on this host, with its `meaning` (`local: false` for one it cannot see).
+- Reply with `tc message send --in-reply-to <message-id> <workspace-id> "<reply>"` (a raw send carrying `inReplyTo` needs your launch headers, or it is refused), BEFORE you mark the message handled; `tc message owed` lists what you still owe. Never use `/clear` as an acknowledgement.
+
 ## Shared Documents
 
 TangleClaw supports shared documents — markdown files multiple projects can reference or embed in their AI engine configs, organized by **project groups**.
@@ -382,3 +401,34 @@ Before wrapping, update memory with what the next session needs: key decisions a
 - Don't duplicate what's already in code, git history, docs, or changelogs.
 - Remove or update stale entries — memory should reflect current state.
 - Plain markdown, no special syntax required.
+
+<!-- PRAWDUCT:ANCHOR — governance pointer managed by the prawduct plugin; keep it small and version-free. -->
+
+## Governance (Prawduct)
+
+This repo is governed by **Prawduct**, a Claude Code plugin; its methodology and
+protocols are read on demand via `/prawduct:methodology`.
+
+**Check first: is the plugin loaded?** If `/prawduct:*` commands are unavailable it
+is not, and **governance is OFF** — no Stop gate, no Critic, nothing below enforced.
+A clone registers the marketplace but installs nothing. Tell the user to
+run `claude plugin install prawduct@prawduct`, then restart — don't proceed as if governed.
+
+**With the plugin loaded — before writing any code, STOP and read the build cycle:
+`/prawduct:methodology building`.** Skipping it is the #1 governance failure.
+
+Hardest rules:
+
+- **Tests are contracts** — fix the code, never weaken a test.
+- **No "pre-existing" exception** — fix what you find, or flag why you can't.
+  The fix half is bounded to BLOCKING; below it, the flag is the whole answer.
+- **Never silently drop a requirement** — say so explicitly.
+- **Run `/prawduct:critic` after medium+ work** — never write findings
+  yourself; the independence is the value. Rigor is stage-keyed: a mid-build
+  review blocks only on what would ship broken, the review at the merge
+  boundary runs everything and is never skipped, and unsure defaults to the
+  cheaper mid-build review.
+
+**Enforcement is structural — while the plugin is loaded:** its Stop hook runs at
+session end and **blocks** if code changed against an active build plan with no
+Critic findings.
