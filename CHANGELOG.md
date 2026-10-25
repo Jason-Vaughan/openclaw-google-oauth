@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Internal
 
 - **Added `"prepare": "tsc -p tsconfig.json"` to `package.json`.** `dist/` is gitignored and not committed, so installing this plugin straight from a git repo/tag (rather than via `clawhub:` or a pre-built local path) previously left the plugin entry point (`./dist/index.js`) missing — the install would silently not work. `prepare` runs automatically on a git-dependency install (and on a bare local `npm install`), so `dist/` now gets built as part of the install itself. Doesn't change the ClawHub-published artifact, which already ships a pre-built `dist/`.
+- **Documented three from-source install snags in the README**, reported by RentalClaw-Project installing v0.5.0 on a containerized OpenClaw habitat ahead of ClawHub's security scan clearing: (1) `npm run plugin:build`/`plugin:validate` resolve the `openclaw` devDependency, which can lag the host's actual `openclaw` CLI and reject a newer `openclaw.json` — don't follow a suggested `doctor --fix` there, build with the host's own `openclaw` binary instead; (2) `NODE_ENV=production` skips `devDependencies` (including `typescript`), breaking the new `prepare` script — needs `npm install --include=dev`; (3) `openclaw plugins install <clone>` can fail `EACCES` on `.git/objects/pack/*.idx` under a read-only bind mount — delete `.git` after building, or install from a `npm pack` tarball instead.
 
 ## [0.5.0] — 2026-10-25
 

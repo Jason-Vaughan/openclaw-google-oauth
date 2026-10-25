@@ -77,7 +77,7 @@ openclaw plugins enable tangleclaw-google-oauth
 
 > **Why two commands?** Community-installed OpenClaw plugins currently don't auto-enable on install — only bundled plugins do, due to a gating quirk in the OpenClaw runtime (filed upstream as [openclaw/openclaw#87188](https://github.com/openclaw/openclaw/issues/87188), with empirical confirmation). The plugin's tools load fine after just `install`, but the `google-workspace` SKILL.md (the agent-bias layer that biases against narrating-without-calling, encodes recipes, etc.) shows as **blocked** with `Missing requirements: config:plugins.entries.tangleclaw-google-oauth.enabled`. The `plugins enable` command flips that flag and activates the skill. This plugin already ships `enabledByDefault: true` in its manifest, so the second command will become unnecessary once #87188 ships.
 
-Or for local dev (e.g. cloned this repo):
+Or for local dev (e.g. cloned this repo), or to install straight from a git tag before a new version has cleared ClawHub's security scan:
 
 ```bash
 cd openclaw-google-oauth
@@ -86,6 +86,16 @@ npm run plugin:build
 openclaw plugins install /path/to/openclaw-google-oauth
 openclaw plugins enable tangleclaw-google-oauth
 ```
+
+`npm install` alone is also enough to produce a working `dist/` — this repo ships a `prepare` script that runs the TypeScript build automatically, which is what makes `openclaw plugins install <git-repo-or-tag>` work without a separate build step.
+
+### Known snags when building/installing from source
+
+Three issues observed installing on a containerized OpenClaw habitat (not hit via the normal ClawHub install):
+
+- **Stale `openclaw` CLI used by `npm run plugin:build`/`plugin:validate`.** These scripts invoke the `openclaw` binary resolved from `devDependencies` (`"openclaw": "latest"` in `package.json`), which can lag behind the `openclaw` CLI actually installed on your host/habitat. If it fails with something like `config is invalid` against a newer `openclaw.json`, **do not** follow a suggested `doctor --fix` — that can rewrite the newer host config incorrectly for the older CLI's schema. Instead, run the build/validate step with your host's own `openclaw` binary (`which openclaw` to find it) rather than the one `npm run plugin:build` resolves.
+- **`NODE_ENV=production` skips `devDependencies`, so `tsc` goes missing.** Official container images and many CI base images set `NODE_ENV=production`, which makes a bare `npm install` skip `devDependencies` (including `typescript`) — the `prepare`/`build` script then fails with `tsc: not found`. Run `npm install --include=dev` (or unset `NODE_ENV`/set it to `development` for the install step) in that environment.
+- **`openclaw plugins install <clone>` can fail with `EACCES` on `.git/objects/pack/*.idx`.** Seen when the clone sits on a read-only bind mount — the install step tries to `chmod` git's pack files. Fix: either delete the clone's `.git` directory after building (you only needed it to get the source), or build with `npm pack` and install from the extracted tarball instead of the raw clone.
 
 ## Setup (one time)
 
