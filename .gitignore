@@ -2,3 +2,32 @@ node_modules/
 dist/
 *.tsbuildinfo
 .DS_Store
+
+# Prawduct session files
+.claude/settings.local.json
+.prawduct/.critic-active
+.prawduct/.critic-findings.json
+.prawduct/.critic-partials/
+.prawduct/.critic-partials-archive/
+.prawduct/.delegate-brief.md
+.prawduct/.governance-ledger.jsonl
+.prawduct/.handoff-notes.md
+.prawduct/.test-evidence.json
+.prawduct/.test-report.xml
+.prawduct/.test-report.xml.scope.json
+.prawduct/.pr-reviews/
+.prawduct/.critic-review-dispatch.json
+.prawduct/.pr-review-dispatch.json
+.prawduct/.session-base-tree
+.prawduct/.session-git-baseline
+.prawduct/.session-handoff.md
+.prawduct/.session-reflected
+.prawduct/.session-start
+.prawduct/.subagent-briefing.md
+.prawduct/.gates-waived
+.prawduct/.advisories.json
+.prawduct/.work-model-index.json
+__pycache__/
+
+# Prawduct plugin version marker (per-repo last-seen)
+.prawduct/.prawduct-version
