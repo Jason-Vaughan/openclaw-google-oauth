@@ -33,7 +33,7 @@ export default defineToolPlugin({
   id: "tangleclaw-google-oauth",
   name: "TangleClaw Google OAuth",
   description:
-    "OpenClaw plugin for Google Workspace — Gmail (send/read/label), Calendar (events), Drive (list/share), Docs (create/read/append), Sheets (create/read/append), Slides (create/read) via direct OAuth. Your OAuth client talks straight to Google. No third-party gateway, no IMAP App Password.",
+    "OpenClaw plugin for Google Workspace — Gmail (send/read/label), Calendar (events + update), Drive (list/share), Docs (create/read/append/format), Sheets (create/read/append/rewrite/format), Slides (create/read) via direct OAuth. Your OAuth client talks straight to Google. No third-party gateway, no IMAP App Password.",
   configSchema,
   tools: (tool) => [
     // ── OAuth setup ───────────────────────────────────────────────────────
@@ -334,6 +334,63 @@ export default defineToolPlugin({
         return { ok: true, deletedEventId: eventId };
       },
     }),
+    tool({
+      name: "calendar_event_update",
+      label: "Update Calendar Event",
+      description:
+        "Edit / modify / update / reschedule / change an existing Google Calendar event by id — summary, description, time, location, color, or reminders. Only the fields you pass are changed; everything else on the event is left as-is. If the event has attendees, a time/location/summary change can notify them — treat that like any other SEND/SHARE/MODIFY operation and confirm first. Get the eventId from calendar_events_list.",
+      parameters: Type.Object({
+        calendarId: Type.Optional(Type.String({ default: "primary" })),
+        eventId: Type.String({ description: "Event id (from calendar_events_list)." }),
+        summary: Type.Optional(Type.String()),
+        description: Type.Optional(Type.String()),
+        location: Type.Optional(Type.String()),
+        start: Type.Optional(
+          Type.String({ description: "RFC3339 start datetime (e.g. 2026-06-01T14:00:00-07:00)." })
+        ),
+        end: Type.Optional(Type.String({ description: "RFC3339 end datetime." })),
+        colorId: Type.Optional(Type.String()),
+        reminders: Type.Optional(
+          Type.Object({
+            useDefault: Type.Optional(Type.Boolean()),
+            overrides: Type.Optional(
+              Type.Array(
+                Type.Object({
+                  method: Type.Union([Type.Literal("email"), Type.Literal("popup")]),
+                  minutes: Type.Integer(),
+                })
+              )
+            ),
+          })
+        ),
+      }),
+      async execute(params, config) {
+        const auth = await createOAuthClient(authConfig(config));
+        const calendar = google.calendar({ version: "v3", auth });
+        const res = await withTimeout(
+          calendar.events.patch({
+            calendarId: params.calendarId ?? "primary",
+            eventId: params.eventId,
+            requestBody: {
+              summary: params.summary,
+              description: params.description,
+              location: params.location,
+              start: params.start ? { dateTime: params.start } : undefined,
+              end: params.end ? { dateTime: params.end } : undefined,
+              colorId: params.colorId,
+              reminders: params.reminders,
+            },
+          }),
+          "calendar.events.patch"
+        );
+        return {
+          id: res.data.id,
+          htmlLink: res.data.htmlLink,
+          status: res.data.status,
+          updated: res.data.updated,
+        };
+      },
+    }),
 
     // ── Drive ─────────────────────────────────────────────────────────────
     tool({
@@ -535,6 +592,31 @@ export default defineToolPlugin({
         return { ok: true, replies: res.data.replies?.length ?? 0 };
       },
     }),
+    tool({
+      name: "docs_batch_update",
+      label: "Format Google Doc (Batch Update)",
+      description:
+        "Edit / format / update / style a Google Doc's structure beyond plain appended text — headings, tables, bullet lists, text/paragraph styles, or inserting/deleting text at a specific index. Pass raw Google Docs API batchUpdate request objects (https://developers.google.com/docs/api/reference/rest/v1/documents/request), applied in order. For simply appending plain text to the end of a doc, docs_append_text is simpler — use this tool only when you need structure or styling.",
+      parameters: Type.Object({
+        documentId: Type.String(),
+        requests: Type.Array(Type.Record(Type.String(), Type.Any()), {
+          description:
+            "Array of Docs API Request objects, passed through untouched to documents.batchUpdate.",
+        }),
+      }),
+      async execute({ documentId, requests }, config) {
+        const auth = await createOAuthClient(authConfig(config));
+        const docs = google.docs({ version: "v1", auth });
+        const res = await withTimeout(
+          docs.documents.batchUpdate({
+            documentId,
+            requestBody: { requests },
+          }),
+          "docs.documents.batchUpdate"
+        );
+        return { ok: true, replies: res.data.replies ?? [] };
+      },
+    }),
 
     // ── Sheets ────────────────────────────────────────────────────────────
     tool({
@@ -624,6 +706,62 @@ export default defineToolPlugin({
             requestBody: { values: params.values },
           }),
           "sheets.spreadsheets.values.append"
+        );
+        return res.data;
+      },
+    }),
+    tool({
+      name: "sheets_values_update",
+      label: "Rewrite Sheet Values",
+      description:
+        "Edit / overwrite / replace / update cell values in a Google Sheet at an exact range — unlike sheets_values_append (which always adds new rows below existing data), this REWRITES the cells at `range` in place. `values` is a 2D array — each inner array is one row of cells. Use to correct existing data, update a status cell, or rewrite a block of cells without shifting other rows.",
+      parameters: Type.Object({
+        spreadsheetId: Type.String(),
+        range: Type.String({ description: "A1 notation (e.g. 'Sheet1!A1')." }),
+        values: Type.Array(Type.Array(Type.Union([Type.String(), Type.Number(), Type.Boolean(), Type.Null()]))),
+        valueInputOption: Type.Optional(
+          Type.Union(
+            [Type.Literal("RAW"), Type.Literal("USER_ENTERED")],
+            { default: "USER_ENTERED" }
+          )
+        ),
+      }),
+      async execute(params, config) {
+        const auth = await createOAuthClient(authConfig(config));
+        const sheets = google.sheets({ version: "v4", auth });
+        const res = await withTimeout(
+          sheets.spreadsheets.values.update({
+            spreadsheetId: params.spreadsheetId,
+            range: params.range,
+            valueInputOption: params.valueInputOption ?? "USER_ENTERED",
+            requestBody: { values: params.values },
+          }),
+          "sheets.spreadsheets.values.update"
+        );
+        return res.data;
+      },
+    }),
+    tool({
+      name: "sheets_batch_update",
+      label: "Format/Batch-Update Sheet",
+      description:
+        "Edit / format / update a Google Sheet's structure or appearance — bold, text color, column widths, borders, conditional formatting, freeze rows/columns, merge cells, add/delete a sheet/tab. Pass raw Google Sheets API batchUpdate request objects (https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/request), applied in order. For cell VALUES rather than formatting, use sheets_values_update or sheets_values_append instead.",
+      parameters: Type.Object({
+        spreadsheetId: Type.String(),
+        requests: Type.Array(Type.Record(Type.String(), Type.Any()), {
+          description:
+            "Array of Sheets API Request objects, passed through untouched to spreadsheets.batchUpdate.",
+        }),
+      }),
+      async execute({ spreadsheetId, requests }, config) {
+        const auth = await createOAuthClient(authConfig(config));
+        const sheets = google.sheets({ version: "v4", auth });
+        const res = await withTimeout(
+          sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            requestBody: { requests },
+          }),
+          "sheets.spreadsheets.batchUpdate"
         );
         return res.data;
       },

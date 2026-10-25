@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-10-25
+
+### Added
+
+- **4 new tools (28 total, up from 24)**, requested by RentalClaw-Project for a "Lupe Calendar" Sheet that needed formatting it couldn't do before:
+  - `sheets_batch_update(spreadsheetId, requests[])` → `spreadsheets.batchUpdate`, passed through untouched. Covers bold/colors/column widths/borders/conditional formats/freeze rows/merge cells.
+  - `sheets_values_update(spreadsheetId, range, values[][], valueInputOption)` → `spreadsheets.values.update`. Rewrites cells at an exact range in place — unlike `sheets_values_append`, which only ever adds rows.
+  - `docs_batch_update(documentId, requests[])` → `documents.batchUpdate`, passed through untouched. Covers headings, tables, text/paragraph styles, bullets — structure beyond what `docs_append_text` can do.
+  - `calendar_event_update(eventId, calendarId?, summary?, description?, start?, end?, location?, colorId?, reminders?)` → `events.patch`. Only the fields passed are changed.
+  - All four are covered by `src/index.test.ts` (metadata), `src/descriptions.test.ts` (description-quality), `src/skills.test.ts`/`src/skill-spec.test.ts` (SKILL.md coverage), and opt-in live round-trips in `src/live.test.ts`.
+
+### Changed
+
+- **`skills/google-workspace/SKILL.md`** updated for the 4 new tools: tool count 24 → 28, new rows in the Calendar/Docs/Sheets "When to use which tool" tables, `sheets_values_update`/`docs_batch_update`/`sheets_batch_update` added to the **WRITE-CREATE** tier (batch/patch calls that only edit content the user named), `calendar_event_update` added to the **SEND/SHARE/DELETE/MODIFY** tier (can notify attendees), and two new multi-step recipes ("bold the header row and freeze it", "move the 3pm meeting to 4pm").
+
+### Internal
+
+- **Fixed a pre-existing `src/skills.test.ts` failure** ("includes a 'never narrate' rule near the top") that was silently broken on `main` before this change — not caused by it. The v0.4.0 tier-gate rewrite pushed "Rule zero: never narrate, always re-call" past the test's first-1500-characters window, but nothing caught it because this repo's only CI workflow (`Publish to ClawHub`) doesn't run `npm test`. Fixed by moving "Rule zero" and "Rule one" up, immediately after the live-account warning and tool-count line, ahead of the "When this skill applies" section. Filed as a reminder to add a test-on-PR CI workflow separately.
+
 ## [0.4.0] — 2026-07-06
 
 ### Changed
