@@ -190,6 +190,24 @@ describeIfToken("live: Calendar tools", () => {
     expect(res.data.summary).toMatch(/^live-test event/);
   }, TIMEOUT_MS);
 
+  it("calendar_event_update patches summary and time without touching other fields", async () => {
+    const before = await calendar.events.get({ calendarId: "primary", eventId: eventId! });
+    const newStart = new Date(Date.now() + 60 * 60 * 1000);
+    const newEnd = new Date(newStart.getTime() + 30 * 60 * 1000);
+    const res = await calendar.events.patch({
+      calendarId: "primary",
+      eventId: eventId!,
+      requestBody: {
+        summary: `live-test event (updated) ${Date.now()}`,
+        start: { dateTime: newStart.toISOString() },
+        end: { dateTime: newEnd.toISOString() },
+      },
+    });
+    expect(res.data.id).toBe(eventId);
+    expect(res.data.summary).toMatch(/\(updated\)/);
+    expect(res.data.description).toBe(before.data.description);
+  }, TIMEOUT_MS);
+
   it("calendar_event_delete removes the event", async () => {
     await calendar.events.delete({
       calendarId: "primary",
@@ -391,6 +409,35 @@ describeIfToken("live: Docs tools", () => {
     const flatText = JSON.stringify(after.data.body);
     expect(flatText).toContain(appendedText);
   }, TIMEOUT_MS);
+
+  it("docs_batch_update inserts a heading via a raw batchUpdate request", async () => {
+    const doc = await docs.documents.get({
+      documentId: documentId!,
+      fields: "body(content(endIndex))",
+    });
+    const contents = doc.data.body?.content ?? [];
+    const endIndex = (contents[contents.length - 1]?.endIndex ?? 1) - 1;
+    const headingText = "Live Heading\n";
+    const insertAt = Math.max(endIndex, 1);
+    const res = await docs.documents.batchUpdate({
+      documentId: documentId!,
+      requestBody: {
+        requests: [
+          { insertText: { location: { index: insertAt }, text: headingText } },
+          {
+            updateParagraphStyle: {
+              range: { startIndex: insertAt, endIndex: insertAt + headingText.length },
+              paragraphStyle: { namedStyleType: "HEADING_1" },
+              fields: "namedStyleType",
+            },
+          },
+        ],
+      },
+    });
+    expect(res.data.replies?.length).toBe(2);
+    const after = await docs.documents.get({ documentId: documentId! });
+    expect(JSON.stringify(after.data.body)).toContain("Live Heading");
+  }, TIMEOUT_MS);
 });
 
 // ─── Sheets ─────────────────────────────────────────────────────────────────
@@ -444,6 +491,50 @@ describeIfToken("live: Sheets tools", () => {
       range: "Sheet1!A1:C1",
     });
     expect(res.data.values?.[0]).toEqual(row);
+  }, TIMEOUT_MS);
+
+  it("sheets_values_update rewrites the row in place", async () => {
+    const rewritten = ["live-test", String(Date.now()), "rewritten"];
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: spreadsheetId!,
+      range: "Sheet1!A1:C1",
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [rewritten] },
+    });
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: spreadsheetId!,
+      range: "Sheet1!A1:C1",
+    });
+    expect(res.data.values?.[0]).toEqual(rewritten);
+  }, TIMEOUT_MS);
+
+  it("sheets_batch_update applies a formatting request (bold header row)", async () => {
+    const meta = await sheets.spreadsheets.get({ spreadsheetId: spreadsheetId! });
+    const sheetId = meta.data.sheets?.[0]?.properties?.sheetId;
+    const res = await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: spreadsheetId!,
+      requestBody: {
+        requests: [
+          {
+            repeatCell: {
+              range: { sheetId, startRowIndex: 0, endRowIndex: 1 },
+              cell: { userEnteredFormat: { textFormat: { bold: true } } },
+              fields: "userEnteredFormat.textFormat.bold",
+            },
+          },
+        ],
+      },
+    });
+    expect(res.data.replies?.length).toBe(1);
+    const after = await sheets.spreadsheets.get({
+      spreadsheetId: spreadsheetId!,
+      ranges: ["Sheet1!A1:A1"],
+      fields: "sheets(data(rowData(values(userEnteredFormat(textFormat(bold))))))",
+    });
+    const bold =
+      after.data.sheets?.[0]?.data?.[0]?.rowData?.[0]?.values?.[0]?.userEnteredFormat
+        ?.textFormat?.bold;
+    expect(bold).toBe(true);
   }, TIMEOUT_MS);
 });
 

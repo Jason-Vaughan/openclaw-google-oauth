@@ -2,7 +2,7 @@
 
 <img src="https://github.com/Jason-Vaughan/project-assets/raw/main/openclaw-google-oauth-no-mcp.png" align="right" width="160" alt="No MCP server required">
 
-**Google Workspace tools for [OpenClaw](https://openclaw.ai) — Gmail, Calendar, Drive, Docs, Sheets, Slides — via direct OAuth.** Your OAuth client talks straight to `googleapis.com`. **No MCP server to run.** No third-party gateway. No IMAP/App Password workaround. Install the plugin, complete the OAuth dance once, and 24 Google Workspace tools are callable from your OpenClaw agent.
+**Google Workspace tools for [OpenClaw](https://openclaw.ai) — Gmail, Calendar, Drive, Docs, Sheets, Slides — via direct OAuth.** Your OAuth client talks straight to `googleapis.com`. **No MCP server to run.** No third-party gateway. No IMAP/App Password workaround. Install the plugin, complete the OAuth dance once, and 28 Google Workspace tools are callable from your OpenClaw agent.
 
 ## Looking for...
 
@@ -46,16 +46,16 @@ After editing `SCOPES`, rebuild (`npm run build`), re-deploy to your OpenClaw in
 
 ## What you get
 
-A single OpenClaw plugin that exposes 24 agent-callable tools spanning six Google APIs from one OAuth client:
+A single OpenClaw plugin that exposes 28 agent-callable tools spanning six Google APIs from one OAuth client:
 
 | Family | Tools |
 |---|---|
 | OAuth | `google_auth_start`, `google_auth_complete` |
 | Gmail | `gmail_messages_list`, `gmail_message_get`, `gmail_message_send`, `gmail_message_modify`, `gmail_message_trash` |
-| Calendar | `calendar_events_list`, `calendar_event_create`, `calendar_event_get`, `calendar_event_delete` |
+| Calendar | `calendar_events_list`, `calendar_event_create`, `calendar_event_get`, `calendar_event_update`, `calendar_event_delete` |
 | Drive | `drive_files_list`, `drive_file_get`, `drive_permission_create`, `drive_file_trash` |
-| Docs | `docs_create`, `docs_get`, `docs_append_text` |
-| Sheets | `sheets_create`, `sheets_get`, `sheets_values_get`, `sheets_values_append` |
+| Docs | `docs_create`, `docs_get`, `docs_append_text`, `docs_batch_update` |
+| Sheets | `sheets_create`, `sheets_get`, `sheets_values_get`, `sheets_values_append`, `sheets_values_update`, `sheets_batch_update` |
 | Slides | `slides_create`, `slides_get` |
 
 ## Why direct OAuth?
@@ -191,7 +191,7 @@ https://www.googleapis.com/auth/presentations
 
 ## Skills (shipped with the plugin)
 
-In addition to the 24 tools, this plugin ships an OpenClaw **skill** at [`skills/google-workspace/SKILL.md`](skills/google-workspace/SKILL.md). Skills are `SKILL.md` files that load into the agent's **system prompt** as an instructional layer — they don't compete with tools, they teach the agent *when* and *how* to use them.
+In addition to the 28 tools, this plugin ships an OpenClaw **skill** at [`skills/google-workspace/SKILL.md`](skills/google-workspace/SKILL.md). Skills are `SKILL.md` files that load into the agent's **system prompt** as an instructional layer — they don't compete with tools, they teach the agent *when* and *how* to use them.
 
 The `google-workspace` skill is automatically discovered by OpenClaw when this plugin is enabled (gated via `plugins.entries.tangleclaw-google-oauth.enabled`). It encodes:
 

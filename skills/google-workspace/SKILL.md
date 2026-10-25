@@ -17,7 +17,20 @@ metadata: { "openclaw": { "emoji": "🔐", "requires": { "config": ["plugins.ent
 > it at shared or highly sensitive accounts, and expect the confirmation gate
 > below to be enforced.
 
-You have 24 direct-OAuth tools spanning Gmail, Calendar, Drive, Docs, Sheets, and Slides. They talk straight to `googleapis.com` (no MCP, no third-party gateway, no IMAP App Password). Per-file Google ACLs decide what's read-only vs writable.
+You have 28 direct-OAuth tools spanning Gmail, Calendar, Drive, Docs, Sheets, and Slides. They talk straight to `googleapis.com` (no MCP, no third-party gateway, no IMAP App Password). Per-file Google ACLs decide what's read-only vs writable.
+
+## Rule zero: never narrate, always re-call
+
+Every tool below performs a real network call against Google. The underlying data **changes between turns** — new mail arrives, the user adds calendar events, files appear in shared folders, sheet cells update. When the user asks anything like "do you see it now / what's new / did it arrive / what changed", **call the tool again from scratch**. Never reuse a previous tool result as the answer to a fresh question. Never say "let me check" without then immediately calling the relevant tool — those words must be followed by an actual tool invocation in the same turn.
+
+## Rule one: on tool error, fix and re-call — do not narrate
+
+When a tool returns an error (e.g. `File not found`, `Invalid query`, `invalid_grant`), the very next thing in the same turn must be ONE of:
+
+- A **corrected tool call** — most common. The query, id, or scope was usually wrong; fix it and try again immediately.
+- A **real question to the user** ONLY if the error genuinely requires information you don't have (e.g. "I need the folder name spelled exactly — is it `eBay_Photos` or `ebay_photos`?").
+
+What you must NOT do after an error: explain what you're going to do, narrate a recovery plan, propose multi-step approaches in prose, or say things like "Let me list the folders to find the right one" without then actually listing them in the same turn. Recovery narration without execution is the #1 way this skill fails the operator.
 
 ## When this skill applies — and when it does not
 
@@ -38,25 +51,12 @@ If it is ambiguous whether the user wants a live operation, ask — do not call.
 | Tier | Tools | Rule |
 | --- | --- | --- |
 | **READ** | `gmail_messages_list`, `gmail_message_get`, `calendar_events_list`, `calendar_event_get`, `drive_files_list`, `drive_file_get`, `docs_get`, `sheets_get`, `sheets_values_get`, `slides_get` | Free to call once the skill is legitimately active. Re-call fresh per Rule zero. |
-| **WRITE-CREATE** | `docs_create`, `sheets_create`, `slides_create`, `calendar_event_create`, `docs_append_text`, `sheets_values_append` | Only on an explicit user request that names (or clearly implies) the artifact. Never create "helpfully" as a side effect. |
-| **SEND / SHARE / DELETE / MODIFY** | `gmail_message_send`, `drive_permission_create`, `gmail_message_trash`, `drive_file_trash`, `calendar_event_delete`, `gmail_message_modify` | **One explicit user instruction per operation, given in the current conversation.** Never inferred from context, never batched beyond exactly what was asked, never repeated after an unconfirmed outcome. Before acting on anything ambiguous (wrong-looking recipient, multiple files matching a name, a delete that would catch more than discussed), state what you are about to do and get a yes first. |
+| **WRITE-CREATE** | `docs_create`, `sheets_create`, `slides_create`, `calendar_event_create`, `docs_append_text`, `docs_batch_update`, `sheets_values_append`, `sheets_values_update`, `sheets_batch_update` | Only on an explicit user request that names (or clearly implies) the artifact. Covers batch/format calls too, as long as they only edit content the user named. Never create or restyle "helpfully" as a side effect. |
+| **SEND / SHARE / DELETE / MODIFY** | `gmail_message_send`, `drive_permission_create`, `gmail_message_trash`, `drive_file_trash`, `calendar_event_delete`, `calendar_event_update`, `gmail_message_modify` | **One explicit user instruction per operation, given in the current conversation.** Never inferred from context, never batched beyond exactly what was asked, never repeated after an unconfirmed outcome. `calendar_event_update` on an event with attendees can notify guests — treat a time/location/summary change on it like any other operation in this tier. Before acting on anything ambiguous (wrong-looking recipient, multiple files matching a name, a delete that would catch more than discussed), state what you are about to do and get a yes first. |
 
 The OAuth tools (`google_auth_start` / `google_auth_complete`) sit outside the
 tiers: call them only for the token-refresh flow described at the bottom, and
 never volunteer a re-auth the user didn't ask about.
-
-## Rule zero: never narrate, always re-call
-
-Every tool below performs a real network call against Google. The underlying data **changes between turns** — new mail arrives, the user adds calendar events, files appear in shared folders, sheet cells update. When the user asks anything like "do you see it now / what's new / did it arrive / what changed", **call the tool again from scratch**. Never reuse a previous tool result as the answer to a fresh question. Never say "let me check" without then immediately calling the relevant tool — those words must be followed by an actual tool invocation in the same turn.
-
-## Rule one: on tool error, fix and re-call — do not narrate
-
-When a tool returns an error (e.g. `File not found`, `Invalid query`, `invalid_grant`), the very next thing in the same turn must be ONE of:
-
-- A **corrected tool call** — most common. The query, id, or scope was usually wrong; fix it and try again immediately.
-- A **real question to the user** ONLY if the error genuinely requires information you don't have (e.g. "I need the folder name spelled exactly — is it `eBay_Photos` or `ebay_photos`?").
-
-What you must NOT do after an error: explain what you're going to do, narrate a recovery plan, propose multi-step approaches in prose, or say things like "Let me list the folders to find the right one" without then actually listing them in the same turn. Recovery narration without execution is the #1 way this skill fails the operator.
 
 ## When to use which tool
 
@@ -77,6 +77,7 @@ What you must NOT do after an error: explain what you're going to do, narrate a 
 | Create a calendar event | `calendar_event_create` | RFC3339 datetimes (e.g. `2026-06-01T14:00:00-07:00`). `attendees` is a list of email strings. Defaults to primary calendar. |
 | List upcoming events | `calendar_events_list` | Default: next 25 on primary. Pass `timeMin` like `2020-01-01T00:00:00Z` to include past events. |
 | Read one event's details | `calendar_event_get` | Pass the `eventId` from `calendar_events_list`. |
+| Edit / reschedule an event | `calendar_event_update` | Pass only the fields you're changing (`summary`, `description`, `location`, `start`, `end`, `colorId`, `reminders`) — everything else stays as-is. Can notify attendees; see the tier gate above. |
 | Delete a calendar event | `calendar_event_delete` | Recoverable from Calendar Trash for ~30 days. |
 
 ### Drive
@@ -101,7 +102,8 @@ What you must NOT do after an error: explain what you're going to do, narrate a 
 | --- | --- | --- |
 | Create a new Google Doc | `docs_create` | Returns `documentId` + URL. Empty doc. |
 | Read a Google Doc | `docs_get` | Returns full structured contents (paragraphs, headings, tables). |
-| **Edit / write to** a Google Doc | `docs_append_text` | **Use THIS for any edit to a Google Doc.** Do NOT use the workspace `edit` tool — that's for local filesystem files only. `docs_append_text` appends text to the end of the doc. |
+| **Edit / write to** a Google Doc (plain text) | `docs_append_text` | **Use THIS for a plain-text edit to a Google Doc.** Do NOT use the workspace `edit` tool — that's for local filesystem files only. `docs_append_text` appends text to the end of the doc. |
+| Format / style a Google Doc (headings, tables, bullets) | `docs_batch_update` | Pass raw Docs API `batchUpdate` request objects. Use for structure/styling beyond plain appended text. |
 
 ### Sheets
 
@@ -110,7 +112,9 @@ What you must NOT do after an error: explain what you're going to do, narrate a 
 | Create a new Google Sheet | `sheets_create` | Returns `spreadsheetId` + URL. Empty workbook with one sheet ("Sheet1"). |
 | List sheet/tab names | `sheets_get` | Returns metadata only, not cell values. |
 | Read cell values | `sheets_values_get` | A1 notation: `Sheet1!A1:C10` (range), `Sheet1!A:A` (column), `Sheet1` (all data). |
-| Add rows of data | `sheets_values_append` | `values` is a 2D array, each inner array = one row. Use after `sheets_create` to populate. |
+| Add rows of data | `sheets_values_append` | `values` is a 2D array, each inner array = one row. Use after `sheets_create` to populate. Always adds new rows — never overwrites existing ones. |
+| Rewrite values at an exact range | `sheets_values_update` | Same `values` shape as `sheets_values_append`, but REWRITES the cells at `range` in place instead of adding rows. Use to correct existing data. |
+| Format / style a sheet (bold, color, borders, freeze, merge) | `sheets_batch_update` | Pass raw Sheets API `batchUpdate` request objects. For VALUES use `sheets_values_append`/`sheets_values_update` instead. |
 
 ### Slides
 
@@ -156,6 +160,11 @@ Folder traversal: first find the parent folder's id with `name='X' and mimeType=
 2. `sheets_values_append` with `range: 'Sheet1!A1'` and the headers as the first row + data rows.
 3. Return the spreadsheet URL.
 
+### "Bold the header row and freeze it"
+
+1. `sheets_get` to find the target sheet's numeric `sheetId` (not the spreadsheetId).
+2. `sheets_batch_update` with a `repeatCell` request (bold, range row 0) and an `updateSheetProperties` request (`gridProperties.frozenRowCount: 1`).
+
 ### "Show me the photos in the DJI subfolder"
 
 1. `drive_files_list` with `query: "name='eBay_Photos' and mimeType='application/vnd.google-apps.folder'"` to get the parent folder id.
@@ -166,6 +175,12 @@ Folder traversal: first find the parent folder's id with `name='X' and mimeType=
 
 1. `calendar_event_create` with `summary`, `start`, `end` — capture the `htmlLink`.
 2. `gmail_message_send` confirming the event, with the `htmlLink` in the body.
+
+### "Move the 3pm meeting to 4pm"
+
+1. `calendar_events_list` (or `calendar_event_get` if the id is already known) to find the exact `eventId`.
+2. If the event has attendees, confirm the time change with the user first — it sits in the SEND/SHARE/DELETE/MODIFY tier.
+3. `calendar_event_update` with just `start`/`end` — omit every other field so nothing else on the event changes.
 
 ### "Clean up the test artifacts"
 
@@ -186,8 +201,8 @@ The agent's authorization is backed by a refresh token stored at the configured 
 
 ## What this plugin does NOT do
 
-- **No local file editing.** For local-filesystem `edit`, use the OpenClaw workspace `edit` tool. `docs_append_text` is for Google Docs only (referenced by `documentId`, not file path).
+- **No local file editing.** For local-filesystem `edit`, use the OpenClaw workspace `edit` tool. `docs_append_text`/`docs_batch_update` are for Google Docs only (referenced by `documentId`, not file path).
 - **No image generation / OCR.** Different tool surface.
 - **No formal Google Workspace admin operations.** This is a personal-account-style integration, not a Workspace Admin SDK wrapper.
 - **No Gmail attachments helper yet.** Sending plain-text only in v0.x. (May land in a later minor release.)
-- **No Calendar resource booking, recurring-event helpers, or free/busy lookups beyond `events.list`.** Use those endpoints directly if you need them; future minor releases may add convenience tools.
+- **No Calendar resource booking, recurring-event helpers, or free/busy lookups beyond `events.list`.** `calendar_event_update` covers single-event edits only — use those endpoints directly for recurrence/booking/free-busy if you need them; future minor releases may add convenience tools.
