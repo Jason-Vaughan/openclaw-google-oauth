@@ -1,0 +1,103 @@
+{
+  "engine": "claude",
+  "methodology": "minimal",
+  "methodologyPhase": null,
+  "silentPrime": true,
+  "featureIndexEnabled": false,
+  "projectMapEnabled": false,
+  "versionBumpEnabled": true,
+  "versionFilePath": null,
+  "wrapAutoPrEnabled": true,
+  "wrapSections": null,
+  "wrapStepOverrides": {
+    "open-pr-check": {
+      "enabled": false
+    },
+    "changelog-update": {
+      "enabled": false
+    },
+    "version-bump": {
+      "enabled": false
+    },
+    "learnings-capture": {
+      "enabled": false
+    },
+    "learnings-db-write": {
+      "enabled": false
+    },
+    "rule-proposal": {
+      "enabled": false
+    },
+    "next-session-prime": {
+      "enabled": false
+    },
+    "features-toc": {
+      "enabled": false
+    },
+    "project-map": {
+      "enabled": false
+    },
+    "index-describe": {
+      "enabled": false
+    },
+    "memory-update": {
+      "enabled": false
+    },
+    "continuity-write": {
+      "enabled": false
+    },
+    "apply-pr-resolutions": {
+      "enabled": false
+    }
+  },
+  "defaultLaunchMode": "default",
+  "showLaunchModePicker": true,
+  "orchestrationKeyRef": null,
+  "rules": {
+    "core": {
+      "changelogPerChange": true,
+      "jsdocAllFunctions": true,
+      "unitTestRequirements": true,
+      "sessionWrapProtocol": true,
+      "porthubRegistration": true
+    },
+    "extensions": {
+      "identitySentry": false,
+      "docsParity": false,
+      "decisionFramework": false,
+      "loggingLevel": "info",
+      "zeroDebtProtocol": false,
+      "independentCritic": false,
+      "adversarialTesting": false
+    }
+  },
+  "ports": {},
+  "quickCommands": [],
+  "actions": [],
+  "tags": [],
+  "evalAuditMode": {
+    "enabled": false,
+    "judgeModel": "claude-haiku-4-5",
+    "gateCascade": true,
+    "sampling": {
+      "enabled": true,
+      "routineInterval": 3,
+      "alwaysScoreFirst": 5,
+      "alwaysScoreLast": 3,
+      "alwaysScoreDisagreement": true,
+      "alwaysScoreLongResponses": true,
+      "longResponseThreshold": 500
+    },
+    "thinkingBlockAnalysis": true,
+    "bidirectionalScoring": false,
+    "wrapQualityScoring": true,
+    "costCapPerSession": 1,
+    "heartbeatInterval": 300000,
+    "baselineWindowDays": 14,
+    "retentionDays": 90
+  },
+  "testCommand": null,
+  "lintCommand": null,
+  "wrapV2": true,
+  "wrapOverridesSeeded": true
+}
