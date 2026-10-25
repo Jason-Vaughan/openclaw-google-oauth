@@ -46,6 +46,7 @@
     "tangleclaw"
   ],
   "scripts": {
+    "prepare": "tsc -p tsconfig.json",
     "build": "tsc -p tsconfig.json",
     "plugin:build": "npm run build && openclaw plugins build --entry ./dist/index.js",
     "plugin:validate": "npm run build && openclaw plugins validate --entry ./dist/index.js",

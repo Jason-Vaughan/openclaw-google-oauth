@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Internal
+
+- **Added `"prepare": "tsc -p tsconfig.json"` to `package.json`.** `dist/` is gitignored and not committed, so installing this plugin straight from a git repo/tag (rather than via `clawhub:` or a pre-built local path) previously left the plugin entry point (`./dist/index.js`) missing — the install would silently not work. `prepare` runs automatically on a git-dependency install (and on a bare local `npm install`), so `dist/` now gets built as part of the install itself. Doesn't change the ClawHub-published artifact, which already ships a pre-built `dist/`.
+
 ## [0.5.0] — 2026-10-25
 
 ### Added
